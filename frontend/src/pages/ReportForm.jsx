@@ -175,12 +175,12 @@ export default function ReportForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card p-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">{t('reportForm.location')}</h2>
               <p className="mt-1 text-sm text-slate-500">{t('reportForm.locationDesc')}</p>
             </div>
-            <button type="button" onClick={requestLocation} disabled={location.loading} className="btn-secondary shrink-0">
+            <button type="button" onClick={requestLocation} disabled={location.loading} className="btn-secondary shrink-0 self-start">
               {location.loading ? t('reportForm.finding') : t('reportForm.useMyLocation')}
             </button>
           </div>

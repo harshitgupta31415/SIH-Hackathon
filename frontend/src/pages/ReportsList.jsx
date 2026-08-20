@@ -51,20 +51,19 @@ export default function ReportsList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('reports.title')}</h1>
           <p className="text-slate-500">{t('reports.subtitle')}</p>
         </div>
-        <Link to="/reports/new" className="btn-primary">{t('reports.newReport')}</Link>
+        <Link to="/reports/new" className="btn-primary self-start">{t('reports.newReport')}</Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <select
           value={filter.status}
           onChange={(e) => updateFilter({ status: e.target.value })}
-          className="input w-40"
+          className="input sm:w-40"
         >
           <option value="">{t('reports.allStatus')}</option>
           <option value="pending">{t('reports.pending')}</option>
@@ -75,19 +74,19 @@ export default function ReportsList() {
           type="text"
           value={filter.disease}
           onChange={(e) => updateFilter({ disease: e.target.value })}
-          className="input w-60"
+          className="input sm:w-60"
           placeholder={t('reports.filterPlaceholder')}
         />
       </div>
 
-      {/* Reports Table */}
       <div className="card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400">{t('reports.loading')}</div>
         ) : reports.length === 0 ? (
           <div className="p-12 text-center text-slate-400">{t('reports.noReports')}</div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.disease')}</th>
@@ -140,6 +139,7 @@ export default function ReportsList() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

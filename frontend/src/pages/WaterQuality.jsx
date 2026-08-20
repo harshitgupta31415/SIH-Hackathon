@@ -75,12 +75,12 @@ export default function WaterQuality() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('waterQuality.title')}</h1>
           <p className="text-slate-500">{t('waterQuality.subtitle')}</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary self-start">
           {showForm ? t('waterQuality.cancel') : t('waterQuality.newTest')}
         </button>
       </div>
@@ -104,7 +104,7 @@ export default function WaterQuality() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('waterQuality.sourceType')}</label>
                 <select
@@ -128,7 +128,7 @@ export default function WaterQuality() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {WATER_PARAMS.map((param) => (
                 <div key={param.key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -155,7 +155,7 @@ export default function WaterQuality() {
               ))}
             </div>
 
-            <button type="submit" disabled={submitting} className="btn-primary">
+            <button type="submit" disabled={submitting} className="btn-primary w-full sm:w-auto">
               {submitting ? t('waterQuality.submitting') : t('waterQuality.submitResult')}
             </button>
           </form>
@@ -169,7 +169,8 @@ export default function WaterQuality() {
         ) : records.length === 0 ? (
           <div className="p-12 text-center text-slate-400">{t('waterQuality.noRecords')}</div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[550px]">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('waterQuality.source')}</th>
@@ -199,6 +200,7 @@ export default function WaterQuality() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

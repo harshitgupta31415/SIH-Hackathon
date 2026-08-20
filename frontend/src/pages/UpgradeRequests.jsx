@@ -55,7 +55,7 @@ export default function UpgradeRequests() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('upgradeRequests.title')}</h1>
           <p className="text-slate-500">{t('upgradeRequests.subtitle')}</p>
@@ -63,7 +63,7 @@ export default function UpgradeRequests() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {['pending', 'approved', 'rejected', 'all'].map((f) => (
           <button
             key={f}
@@ -94,9 +94,9 @@ export default function UpgradeRequests() {
                 key={req.id}
                 className={`card p-4 ${config.bg} border-l-4 ${config.border}`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-lg">{config.icon}</span>
                       <h3 className="font-semibold text-slate-900">{req.user_name || t('upgradeRequests.unknown')}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.badge}`}>
@@ -127,7 +127,7 @@ export default function UpgradeRequests() {
                   {req.status === 'pending' && !isReviewing && (
                     <button
                       onClick={() => setReviewing(req.id)}
-                      className="ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
+                      className="self-start sm:ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
                     >
                       {t('upgradeRequests.review')}
                     </button>
@@ -145,24 +145,24 @@ export default function UpgradeRequests() {
                       rows={2}
                       placeholder={t('upgradeRequests.adminNotesPlaceholder')}
                     />
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                       <button
                         onClick={() => { setReviewing(null); setReviewNotes(''); }}
-                        className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-md"
+                        className="w-full sm:w-auto px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-md"
                       >
                         {t('upgrade.cancel')}
                       </button>
                       <button
                         onClick={() => handleReview(req.id, 'rejected')}
                         disabled={actionLoading}
-                        className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                        className="w-full sm:w-auto px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                       >
                         {t('upgradeRequests.reject')}
                       </button>
                       <button
                         onClick={() => handleReview(req.id, 'approved')}
                         disabled={actionLoading}
-                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                        className="w-full sm:w-auto px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                       >
                         {t('upgradeRequests.approve')}
                       </button>

@@ -38,7 +38,7 @@ export default function Alerts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('alerts.title')}</h1>
           <p className="text-slate-500">{t('alerts.subtitle')}</p>
@@ -46,7 +46,7 @@ export default function Alerts() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {['active', 'resolved', 'all'].map((f) => (
           <button
             key={f}
@@ -76,15 +76,15 @@ export default function Alerts() {
                 key={alert.id}
                 className={`card p-4 ${config.bg} border-l-4 ${config.border}`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-lg">{config.icon}</span>
                       <h3 className="font-semibold text-slate-900">{alert.title}</h3>
                       <span className={config.badge}>{alert.severity}</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-slate-500">
                       <span>📍 {alert.affected_area}</span>
                       <span>📅 {new Date(alert.created_at).toLocaleDateString()}</span>
                       {alert.predicted_cases && (
@@ -101,7 +101,7 @@ export default function Alerts() {
                   {!alert.is_resolved && ['block_officer', 'district_admin'].includes(user?.role) && (
                     <button
                       onClick={() => handleResolve(alert.id)}
-                      className="ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
+                      className="self-start sm:ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
                     >
                       {t('alerts.markResolved')}
                     </button>

@@ -35,18 +35,18 @@ export default function RiskMap() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('riskMap.title')}</h1>
           <p className="text-slate-500">{t('riskMap.subtitle')}</p>
         </div>
-        <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{user?.district || t('riskMap.yourDistrict')}</span>
+        <span className="self-start rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{user?.district || t('riskMap.yourDistrict')}</span>
       </div>
 
       {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
         <span className="font-medium text-slate-600">{t('riskMap.riskLevel')}</span>
         {[
           { color: '#94a3b8', label: t('riskMap.low') },
@@ -63,7 +63,7 @@ export default function RiskMap() {
       </div>
 
       {/* Map */}
-      <div className="card overflow-hidden" style={{ height: '500px' }}>
+      <div className="card overflow-hidden h-[400px] sm:h-[500px]">
         {loading ? (
           <div className="flex items-center justify-center h-full text-slate-400">{t('riskMap.loading')}</div>
         ) : (

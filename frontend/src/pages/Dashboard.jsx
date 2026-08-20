@@ -35,12 +35,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.title')}</h1>
           <p className="text-slate-500">{t('dashboard.subtitle')}</p>
         </div>
-        <div className={`px-3 py-1 rounded-full text-sm font-medium ${summary?.risk_level === 'HIGH' ? 'bg-red-100 text-red-700' : summary?.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+        <div className={`self-start px-3 py-1 rounded-full text-sm font-medium ${summary?.risk_level === 'HIGH' ? 'bg-red-100 text-red-700' : summary?.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
           {t('dashboard.risk')}: {summary?.risk_level || 'LOW'}
         </div>
       </div>
