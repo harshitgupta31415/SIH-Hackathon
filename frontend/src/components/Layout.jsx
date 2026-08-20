@@ -169,7 +169,7 @@ export default function Layout() {
 
       {/* Mobile overlay sidebar */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-40 md:hidden isolate">
           <div
             className="absolute inset-0 bg-black/60 transition-opacity"
             onClick={() => setSidebarOpen(false)}
