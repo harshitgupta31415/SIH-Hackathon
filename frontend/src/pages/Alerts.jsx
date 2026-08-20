@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 
 const SEVERITY_CONFIG = {
   low: { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'badge-low', icon: 'ℹ️' },
@@ -9,6 +10,7 @@ const SEVERITY_CONFIG = {
 };
 
 export default function Alerts() {
+  const { user } = useAuthStore();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
@@ -94,7 +96,7 @@ export default function Alerts() {
                       </div>
                     )}
                   </div>
-                  {!alert.is_resolved && (
+                  {!alert.is_resolved && ['block_officer', 'district_admin'].includes(user?.role) && (
                     <button
                       onClick={() => handleResolve(alert.id)}
                       className="ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"

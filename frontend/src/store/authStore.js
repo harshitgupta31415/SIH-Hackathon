@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '../utils/api';
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem('healthwatch_token'),
   loading: false,
@@ -15,7 +15,7 @@ export const useAuthStore = create((set, get) => ({
       set({ user: data.user, token: data.access_token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Login failed';
+      const msg = err.response?.data?.detail || 'Cannot reach the HealthWatch API. Start the backend on port 8000 and try again.';
       set({ error: msg, loading: false });
       throw err;
     }
@@ -29,7 +29,7 @@ export const useAuthStore = create((set, get) => ({
       set({ user: data.user, token: data.access_token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Registration failed';
+      const msg = err.response?.data?.detail || 'Cannot reach the HealthWatch API. Start the backend on port 8000 and try again.';
       set({ error: msg, loading: false });
       throw err;
     }

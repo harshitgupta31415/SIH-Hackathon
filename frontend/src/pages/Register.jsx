@@ -2,13 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
-const ROLES = [
-  { value: 'volunteer', label: 'Community Volunteer' },
-  { value: 'asha_worker', label: 'ASHA Worker' },
-  { value: 'block_officer', label: 'Block Health Officer' },
-  { value: 'district_admin', label: 'District Admin' },
-];
-
 const DISTRICTS = [
   'Kamrup', 'Kamrup Metro', 'Nagaon', 'Sonitpur', 'Dibrugarh',
   'Jorhat', 'Sivasagar', 'Cachar', 'Karimganj', 'Hailakandi',
@@ -18,7 +11,7 @@ const DISTRICTS = [
 export default function Register() {
   const [form, setForm] = useState({
     name: '', email: '', phone: '', password: '',
-    role: 'volunteer', village: '', block: '', district: 'Kamrup', state: 'Assam',
+    village: '', block: '', district: 'Kamrup', state: 'Assam',
   });
   const { register, loading, error } = useAuthStore();
   const navigate = useNavigate();
@@ -74,14 +67,9 @@ export default function Register() {
               <input name="password" type="password" value={form.password} onChange={handleChange} className="input" required minLength={8} />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-              <select name="role" value={form.role} onChange={handleChange} className="input">
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
+            <p className="rounded-md bg-blue-50 p-3 text-sm text-blue-800">
+              New accounts are created as community volunteers. Health-worker and administrator access is assigned by your district administrator.
+            </p>
 
             <div className="grid grid-cols-2 gap-4">
               <div>

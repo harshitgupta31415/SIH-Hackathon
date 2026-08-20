@@ -4,8 +4,8 @@ import { useAuthStore } from '../store/authStore';
 const navItems = [
   { to: '/', icon: '📊', label: 'Dashboard' },
   { to: '/reports', icon: '📋', label: 'Reports' },
-  { to: '/reports/new', icon: '➕', label: 'New Report' },
-  { to: '/water-quality', icon: '💧', label: 'Water Quality' },
+  { to: '/reports/new', icon: '➕', label: 'New Report', roles: ['volunteer', 'asha_worker'] },
+  { to: '/water-quality', icon: '💧', label: 'Water Quality', roles: ['asha_worker', 'block_officer', 'district_admin'] },
   { to: '/alerts', icon: '🔔', label: 'Alerts' },
   { to: '/risk-map', icon: '🗺️', label: 'Risk Map' },
 ];
@@ -29,7 +29,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
+          {navItems.filter((item) => !item.roles || item.roles.includes(user?.role)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

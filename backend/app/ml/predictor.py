@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-import numpy as np
-
 from app.models.models import DiseaseReport, WaterQuality, Village, OutbreakPrediction
 
 
@@ -103,12 +101,12 @@ class MLPredictor:
             if village.population and village.population > 1000:
                 risk_factors.append("high_population")
 
-            risk_score = min(
+            risk_score = max(0, min(
                 (trend["change_percent"] / 100 * 40) +
                 (water_issues / 3.0 * 30) +
                 (min(trend["recent_week_cases"] / 10.0, 1.0) * 30),
                 100
-            )
+            ))
 
             predicted = max(
                 trend["recent_week_cases"] * (1 + trend["change_percent"] / 200),

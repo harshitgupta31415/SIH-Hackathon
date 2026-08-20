@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,6 +20,11 @@ def create_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.VOLUNTEER, UserRole.ASHA_WORKER)),
 ):
+    village = db.query(Village).filter(Village.id == data.village_id).first()
+    if not village:
+        raise HTTPException(status_code=404, detail="Village not found")
+    if village.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to report for another district")
     report = HealthService.create_report(db, data, current_user.id)
     return ReportResponse.model_validate(report)
 
@@ -35,8 +41,12 @@ def list_reports(
 ):
     query = db.query(DiseaseReport)
 
+    if district and district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view reports outside your district")
     if district:
         query = query.join(Village).filter(Village.district == district)
+    elif current_user.role != UserRole.VOLUNTEER:
+        query = query.join(Village).filter(Village.district == current_user.district)
     if status:
         query = query.filter(DiseaseReport.status == status)
     if disease_type:
@@ -86,7 +96,7 @@ def update_report_status(
     if data.status:
         report.status = data.status
         report.verified_by = current_user.id
-        report.verified_at = __import__("datetime").datetime.utcnow()
+        report.verified_at = datetime.utcnow()
     if data.notes:
         report.notes = data.notes
 

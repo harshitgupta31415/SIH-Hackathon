@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../utils/api';
-
-const COLORS = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#8b5cf6'];
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -17,7 +16,8 @@ export default function Dashboard() {
     ]).then(([s, a]) => {
       setSummary(s.data);
       setAlerts(a.data);
-    }).finally(() => setLoading(false));
+    }).catch(() => setError('Unable to load dashboard data. Please refresh and try again.'))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500">Loading dashboard...</p></div>;
@@ -42,6 +42,8 @@ export default function Dashboard() {
           Risk: {summary?.risk_level || 'LOW'}
         </div>
       </div>
+
+      {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

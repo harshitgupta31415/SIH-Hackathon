@@ -8,7 +8,7 @@ from sqlalchemy import desc
 from app.database import get_db
 from app.models.models import Alert, User, UserRole
 from app.schemas.schemas import AlertCreate, AlertResponse
-from app.middleware.auth import require_role
+from app.middleware.auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
 
@@ -37,12 +37,13 @@ def list_alerts(
     limit: int = Query(50, le=200),
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(
-        UserRole.ASHA_WORKER, UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN
-    )),
+    current_user: User = Depends(get_current_user),
 ):
     query = db.query(Alert)
 
+    if district and district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view alerts outside your district")
+    query = query.filter(Alert.district == (district or current_user.district))
     if district:
         query = query.filter(Alert.district == district)
     if is_resolved is not None:
@@ -68,6 +69,8 @@ def resolve_alert(
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    if alert.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to resolve alerts outside your district")
 
     alert.is_resolved = True
     alert.resolved_at = datetime.utcnow()

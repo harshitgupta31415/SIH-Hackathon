@@ -4,7 +4,7 @@ from loguru import logger
 
 from app.config import get_settings
 from app.database import engine, Base
-from app.routes import auth, reports, water_quality, alerts, dashboard, villages
+from app.routes import auth, reports, water_quality, alerts, dashboard, villages, locations
 
 settings = get_settings()
 
@@ -30,6 +30,7 @@ app.include_router(water_quality.router)
 app.include_router(alerts.router)
 app.include_router(dashboard.router)
 app.include_router(villages.router)
+app.include_router(locations.router)
 
 
 @app.on_event("startup")

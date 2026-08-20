@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 
 const STATUS_STYLES = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -17,6 +18,7 @@ const RISK_STYLES = (score) => {
 };
 
 export default function ReportsList() {
+  const { user } = useAuthStore();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: '', disease: '' });
@@ -30,6 +32,11 @@ export default function ReportsList() {
       .then(({ data }) => setReports(data))
       .finally(() => setLoading(false));
   }, [filter]);
+
+  const updateFilter = (updates) => {
+    setLoading(true);
+    setFilter((current) => ({ ...current, ...updates }));
+  };
 
   const handleVerify = async (id, status) => {
     try {
@@ -54,7 +61,7 @@ export default function ReportsList() {
       <div className="flex gap-3">
         <select
           value={filter.status}
-          onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+          onChange={(e) => updateFilter({ status: e.target.value })}
           className="input w-40"
         >
           <option value="">All Status</option>
@@ -65,7 +72,7 @@ export default function ReportsList() {
         <input
           type="text"
           value={filter.disease}
-          onChange={(e) => setFilter({ ...filter, disease: e.target.value })}
+          onChange={(e) => updateFilter({ disease: e.target.value })}
           className="input w-60"
           placeholder="Filter by disease..."
         />
@@ -110,7 +117,7 @@ export default function ReportsList() {
                     {new Date(report.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {report.status === 'pending' && (
+                    {report.status === 'pending' && ['asha_worker', 'block_officer', 'district_admin'].includes(user?.role) && (
                       <div className="flex gap-1 justify-end">
                         <button
                           onClick={() => handleVerify(report.id, 'verified')}

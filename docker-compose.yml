@@ -34,6 +34,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET_KEY: healthwatch-ne-secret-key-change-in-production
       CORS_ORIGINS: '["http://localhost:5173"]'
+      RESET_DATABASE: ${RESET_DATABASE:-false}
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +42,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: sh -c "python seed_data.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   pgdata:

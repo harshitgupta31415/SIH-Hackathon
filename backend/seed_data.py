@@ -1,14 +1,22 @@
 import uuid
+import os
+import sys
 from datetime import datetime, timedelta
 from app.database import SessionLocal, engine, Base
 from app.models.models import User, Village, DiseaseReport, WaterQuality, Alert
 from app.middleware.auth import hash_password
 from app.models.models import UserRole, ReportStatus, WaterSourceType, AlertSeverity
 
-Base.metadata.drop_all(bind=engine)
+if os.getenv("RESET_DATABASE") == "true":
+    Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
+
+if db.query(User).first():
+    db.close()
+    print("Database already contains data; skipping seed. Set RESET_DATABASE=true to replace development data.")
+    sys.exit(0)
 
 # Create admin user
 admin = User(

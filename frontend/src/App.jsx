@@ -12,17 +12,17 @@ import RiskMap from './pages/RiskMap';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }) {
-  const { token, user } = useAuthStore();
+  const { token } = useAuthStore();
   if (!token) return <Navigate to="/login" />;
   return children;
 }
 
 export default function App() {
-  const { fetchMe, user } = useAuthStore();
+  const { fetchMe } = useAuthStore();
 
   useEffect(() => {
     fetchMe();
-  }, []);
+  }, [fetchMe]);
 
   return (
     <BrowserRouter>

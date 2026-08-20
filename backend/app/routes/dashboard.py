@@ -1,5 +1,7 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -17,7 +19,9 @@ def get_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return HealthService.get_dashboard_summary(db, district)
+    if district and district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view another district")
+    return HealthService.get_dashboard_summary(db, district or current_user.district)
 
 
 @router.get("/risk-map")
@@ -26,7 +30,9 @@ def get_risk_map(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return HealthService.get_risk_map_data(db, district)
+    if district and district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view another district")
+    return HealthService.get_risk_map_data(db, district or current_user.district)
 
 
 @router.get("/predictions/{district}/{disease_type}")
@@ -36,17 +42,17 @@ def get_prediction(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN)),
 ):
+    if district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view another district")
     prediction = MLPredictor.predict_outbreak(db, district, disease_type)
-    MLPredictor.save_prediction(db, prediction)
     return prediction
 
 
 @router.get("/trends/{village_id}/{disease_type}")
 def get_trends(
-    village_id: str,
+    village_id: UUID,
     disease_type: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from uuid import UUID
-    return MLPredictor.calculate_trend(db, UUID(village_id), disease_type)
+    return MLPredictor.calculate_trend(db, village_id, disease_type)

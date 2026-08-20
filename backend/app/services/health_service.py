@@ -89,6 +89,19 @@ class HealthService:
         if not admin:
             return
 
+        existing_alert = db.query(Alert).filter(
+            Alert.affected_area == village.name,
+            Alert.district == village.district,
+            Alert.title == f"Outbreak Risk: {report.disease_type} in {village.name}",
+            Alert.is_resolved.is_(False),
+        ).first()
+        if existing_alert:
+            existing_alert.message = f"Risk score {risk_score}/100. {report.cases_count} new cases reported."
+            existing_alert.severity = severity
+            existing_alert.predicted_cases = max(existing_alert.predicted_cases or 0, report.cases_count * 2)
+            db.commit()
+            return
+
         alert = Alert(
             title=f"Outbreak Risk: {report.disease_type} in {village.name}",
             message=f"Risk score {risk_score}/100. {report.cases_count} cases reported.",
@@ -126,8 +139,12 @@ class HealthService:
             query = query.join(Village).filter(Village.district == district)
 
         reports_today = query.filter(DiseaseReport.created_at >= today).count()
-        reports_week = query.filter(DiseaseReport.created_at >= week_ago).count()
-        verified = query.filter(DiseaseReport.status == ReportStatus.VERIFIED).count()
+        reports_week = query.filter(DiseaseReport.created_at >= week_ago).with_entities(
+            func.coalesce(func.sum(DiseaseReport.cases_count), 0)
+        ).scalar()
+        verified = query.filter(DiseaseReport.status == ReportStatus.VERIFIED).with_entities(
+            func.coalesce(func.sum(DiseaseReport.cases_count), 0)
+        ).scalar()
 
         alert_query = db.query(Alert).filter(Alert.is_resolved == False)
         if district:
@@ -144,9 +161,11 @@ class HealthService:
             village_count = village_count.filter(Village.district == district)
         villages_monitored = village_count.scalar()
 
+        disease_query = db.query(DiseaseReport.disease_type, func.sum(DiseaseReport.cases_count).label("total"))
+        if district:
+            disease_query = disease_query.join(Village).filter(Village.district == district)
         top_diseases = (
-            db.query(DiseaseReport.disease_type, func.sum(DiseaseReport.cases_count).label("total"))
-            .filter(DiseaseReport.created_at >= week_ago)
+            disease_query.filter(DiseaseReport.created_at >= week_ago)
             .group_by(DiseaseReport.disease_type)
             .order_by(desc("total"))
             .limit(5)

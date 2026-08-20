@@ -1,11 +1,11 @@
 from uuid import UUID
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.database import get_db
-from app.models.models import WaterQuality, User, UserRole
+from app.models.models import WaterQuality, User, UserRole, Village
 from app.schemas.schemas import WaterQualityCreate, WaterQualityResponse
 from app.middleware.auth import require_role
 from app.services.health_service import WaterQualityService
@@ -19,6 +19,11 @@ def create_water_quality(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ASHA_WORKER, UserRole.BLOCK_OFFICER)),
 ):
+    village = db.query(Village).filter(Village.id == data.village_id).first()
+    if not village:
+        raise HTTPException(status_code=404, detail="Village not found")
+    if village.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to submit a test for another district")
     record = WaterQualityService.create_record(db, data, current_user.id)
     return WaterQualityResponse.model_validate(record)
 
@@ -35,6 +40,8 @@ def list_water_quality(
     )),
 ):
     query = db.query(WaterQuality)
+
+    query = query.join(Village).filter(Village.district == current_user.district)
 
     if village_id:
         query = query.filter(WaterQuality.village_id == village_id)

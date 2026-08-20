@@ -23,6 +23,7 @@ export default function WaterQuality() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [villages, setVillages] = useState([]);
   const [form, setForm] = useState({
     source_type: 'well',
     test_date: new Date().toISOString().split('T')[0],
@@ -35,12 +36,20 @@ export default function WaterQuality() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    api.get('/villages').then(({ data }) => setVillages(data));
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.village_id) {
+      alert('Select the village where this water source was tested.');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
-        village_id: '00000000-0000-0000-0000-000000000001',
+        village_id: form.village_id,
         source_type: form.source_type,
         test_date: form.test_date,
         latitude: 26.1445,
@@ -79,6 +88,20 @@ export default function WaterQuality() {
         <div className="card p-6">
           <h3 className="font-semibold text-slate-900 mb-4">Submit Water Test Result</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Village</label>
+              <select
+                value={form.village_id || ''}
+                onChange={(e) => setForm({ ...form, village_id: e.target.value })}
+                className="input"
+                required
+              >
+                <option value="">Select a village</option>
+                {villages.map((village) => (
+                  <option key={village.id} value={village.id}>{village.name} — {village.block}</option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Source Type</label>

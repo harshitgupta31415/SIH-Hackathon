@@ -165,6 +165,13 @@ class VillageResponse(BaseModel):
         from_attributes = True
 
 
+class ReverseLocationResponse(BaseModel):
+    latitude: float
+    longitude: float
+    address: Optional[str] = None
+    nearest_village: Optional[VillageResponse] = None
+
+
 # ── Alert Schemas ─────────────────────────────────────────
 
 class AlertCreate(BaseModel):

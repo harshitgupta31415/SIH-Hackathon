@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import api from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 import 'leaflet/dist/leaflet.css';
 
 function getRiskColor(score) {
@@ -11,33 +12,24 @@ function getRiskColor(score) {
   return '#94a3b8';
 }
 
-function MapLegend() {
-  const map = useMap();
-  return null;
-}
-
 export default function RiskMap() {
+  const { user } = useAuthStore();
   const [mapData, setMapData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [district, setDistrict] = useState('');
   const [summary, setSummary] = useState(null);
+  const [error, setError] = useState(null);
 
-  const fetchMapData = () => {
-    const params = {};
-    if (district) params.district = district;
-
+  useEffect(() => {
     Promise.all([
-      api.get('/dashboard/risk-map', { params }),
-      api.get('/dashboard/summary', { params }),
+      api.get('/dashboard/risk-map'),
+      api.get('/dashboard/summary'),
     ]).then(([map, sum]) => {
       setMapData(map.data);
       setSummary(sum.data);
+    }).catch(() => {
+      setError('Unable to load map data. Please refresh and try again.');
     }).finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchMapData();
-  }, [district]);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -46,19 +38,10 @@ export default function RiskMap() {
           <h1 className="text-2xl font-bold text-slate-900">Risk Map</h1>
           <p className="text-slate-500">Disease outbreak risk visualization</p>
         </div>
-        <select
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-          className="input w-48"
-        >
-          <option value="">All Districts</option>
-          <option value="Kamrup">Kamrup</option>
-          <option value="Nagaon">Nagaon</option>
-          <option value="Sonitpur">Sonitpur</option>
-          <option value="Dibrugarh">Dibrugarh</option>
-          <option value="Jorhat">Jorhat</option>
-        </select>
+        <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{user?.district || 'Your district'}</span>
       </div>
+
+      {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-sm">
