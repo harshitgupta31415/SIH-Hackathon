@@ -191,7 +191,7 @@ resource "google_redis_instance" "cache" {
   tier           = "STANDARD_HA"   # HA with automatic failover
 
   redis_version  = "REDIS_7_0"
-  display_name   = "HealthWatch Cache"
+  display_name   = "JJS Cache"
 
   authorized_network = google_compute_network.vpc.id
   connect_mode       = "PRIVATE_SERVICE_ACCESS"

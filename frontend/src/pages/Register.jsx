@@ -34,7 +34,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 py-8">
       <div className="w-full max-w-lg p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">🏥 HealthWatch NE</h1>
+          <h1 className="text-3xl font-bold text-slate-900">🌊 Jal Jeevan Swasthya</h1>
           <p className="text-slate-600 mt-2">{t('register.createAccount')}</p>
         </div>
 

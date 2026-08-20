@@ -58,7 +58,7 @@ export default function Intelligence() {
     try {
       await api.post('/alerts', {
         title: `${titleCase(prediction.risk_level)} ${disease} early-warning alert`,
-        message: `HealthWatch projects ${prediction.predicted_cases} cases over the next 14 days. ${prediction.explanation.risk_drivers.map((driver) => driver.label).join('; ')}.`,
+        message: `Jal Jeevan Swasthya projects ${prediction.predicted_cases} cases over the next 14 days. ${prediction.explanation.risk_drivers.map((driver) => driver.label).join('; ')}.`,
         severity: prediction.risk_level,
         affected_area: highestRiskVillage?.village_name || user.district,
         district: user.district,
@@ -82,7 +82,7 @@ export default function Intelligence() {
       <section className="rounded-2xl bg-gradient-to-r from-slate-950 via-blue-950 to-cyan-900 p-6 text-white shadow-lg">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-cyan-200">HealthWatch early-warning engine</p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-cyan-200">Jal Jeevan Swasthya early-warning engine</p>
             <h1 className="mt-2 text-3xl font-bold">Outbreak Intelligence</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-200">Transforms field reports and water-quality checks into a 14-day, explainable district forecast, then lets officials create a verified response alert.</p>
           </div>

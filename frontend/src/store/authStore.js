@@ -16,7 +16,7 @@ export const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.access_token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Cannot reach the HealthWatch API. Start the backend on port 8000 and try again.';
+      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Start the backend on port 8000 and try again.';
       set({ error: msg, loading: false });
       throw err;
     }
@@ -30,7 +30,7 @@ export const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.access_token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Cannot reach the HealthWatch API. Start the backend on port 8000 and try again.';
+      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Start the backend on port 8000 and try again.';
       set({ error: msg, loading: false });
       throw err;
     }

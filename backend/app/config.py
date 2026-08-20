@@ -6,7 +6,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    APP_NAME: str = "HealthWatch NE"
+    APP_NAME: str = "Jal Jeevan Swasthya"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 HealthWatch NE
+# 🌊 Jal Jeevan Swasthya
 
 ### Smart Community Health Monitoring & Early Warning System
 
@@ -23,7 +23,7 @@
 
 Water-borne disease outbreaks remain a critical health threat in rural Northeast India, where limited infrastructure, delayed reporting, and lack of predictive tools allow diseases like cholera, typhoid, and hepatitis to spread unchecked.
 
-**HealthWatch NE** is a full-stack web application that empowers community health workers to report disease cases in real-time, monitors water quality across villages, and uses machine learning to predict outbreaks before they escalate — all accessible in 6 regional languages on any device.
+**Jal Jeevan Swasthya** is a full-stack web application that empowers community health workers to report disease cases in real-time, monitors water quality across villages, and uses machine learning to predict outbreaks before they escalate — all accessible in 6 regional languages on any device.
 
 > Built for **Smart India Hackathon 2025** — Problem Statement `SIH25001`
 
@@ -89,8 +89,6 @@ English, Hindi, Bengali, Assamese, Marathi, and Tamil — zero-dependency custom
 
 ## 📸 Screenshots
 
-> Add your screenshots to a `screenshots/` folder at the project root.
-
 <table>
 <tr>
 <td align="center">
@@ -120,6 +118,12 @@ English, Hindi, Bengali, Assamese, Marathi, and Tamil — zero-dependency custom
 <td align="center">
 <img src="screenshots/water-quality.png" alt="Water Quality" width="400" /><br>
 <b>Water Quality Testing</b>
+</td>
+</tr>
+<tr>
+<td align="center" colspan="2">
+<img src="screenshots/upgrade-requests.png" alt="Upgrade Requests" width="500" /><br>
+<b>Role Upgrade Requests</b>
 </td>
 </tr>
 </table>
@@ -220,7 +224,7 @@ English, Hindi, Bengali, Assamese, Marathi, and Tamil — zero-dependency custom
 ## 📁 Project Structure
 
 ```
-HealthWatch-NE/
+Jal-Jeevan-Swasthya/
 ├── 📄 README.md
 ├── 🐳 Dockerfile                    # Railway deployment
 ├── 🐳 docker-compose.yml            # Local development (4 services)

@@ -1,5 +1,5 @@
 #!/bin/bash
-# HealthWatch NE — GKE Deployment Script
+# Jal Jeevan Swasthya — GKE Deployment Script
 # Prerequisites: gcloud CLI authenticated, project set, Docker built
 set -euo pipefail
 
@@ -9,7 +9,7 @@ ZONE="${ZONE:-asia-south1-a}"
 CLUSTER="healthwatch-cluster"
 NAMESPACE="healthwatch"
 
-echo "=== HealthWatch NE Deployment ==="
+echo "=== Jal Jeevan Swasthya Deployment ==="
 echo "Project:  $PROJECT_ID"
 echo "Region:   $REGION"
 echo "Cluster:  $CLUSTER"

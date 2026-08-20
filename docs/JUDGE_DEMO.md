@@ -3,7 +3,7 @@
 ## Opening: the problem (20 seconds)
 
 "In rural communities, diarrhoea and contaminated-water signals are often
-recorded separately. HealthWatch turns those scattered field signals into an
+recorded separately. Jal Jeevan Swasthya turns those scattered field signals into an
 early warning before a district-wide outbreak response is delayed."
 
 ## Field workflow (60 seconds)

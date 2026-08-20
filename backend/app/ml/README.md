@@ -1,9 +1,9 @@
-# HealthWatch early-warning logic
+# Jal Jeevan Swasthya early-warning logic
 
 ## What the system solves
 
 Water-borne disease outbreaks are often noticed only after many patients reach
-a health facility. HealthWatch gives district teams an earlier signal by
+a health facility. Jal Jeevan Swasthya gives district teams an earlier signal by
 combining community disease reports, water-quality findings, village profiles,
 and recent case trends.
 
@@ -35,5 +35,5 @@ and recent case trends.
 Before using this outside a pilot, collect de-identified, verified historical
 data across seasons; use strictly time-ordered train/test splits; compare MAE,
 alert recall, false-alert rate, and uncertainty coverage against a seasonal
-baseline; and monitor drift after deployment. HealthWatch is decision support,
+baseline; and monitor drift after deployment. Jal Jeevan Swasthya is decision support,
 not diagnosis or autonomous public-health policy.

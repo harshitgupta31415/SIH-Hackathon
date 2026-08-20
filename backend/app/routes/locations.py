@@ -37,7 +37,7 @@ async def reverse_location(
     """Resolve an opted-in device location and suggest a monitored village."""
     address = None
     try:
-        async with httpx.AsyncClient(timeout=5.0, headers={"User-Agent": "HealthWatchNE/1.0"}) as client:
+        async with httpx.AsyncClient(timeout=5.0, headers={"User-Agent": "JJS/1.0"}) as client:
             response = await client.get(
                 NOMINATIM_URL,
                 params={"lat": latitude, "lon": longitude, "format": "jsonv2", "addressdetails": 1},
