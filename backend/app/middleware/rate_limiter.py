@@ -19,13 +19,14 @@ logger = logging.getLogger(__name__)
 
 RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
 RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "60"))  # seconds
+DEBUG_MODE = os.getenv("DEBUG", "true").lower() == "true"
 
 # (max_requests_per_window, window_seconds)
 DEFAULT_LIMITS = {
-    "auth": (10, 60),       # 10 login/register per minute per IP
-    "reports": (30, 60),    # 30 report submissions per minute per user
-    "general": (120, 60),   # 120 reads per minute per IP
-    "write": (60, 60),      # 60 writes per minute per user
+    "auth": (100, 60) if DEBUG_MODE else (10, 60),
+    "reports": (200, 60) if DEBUG_MODE else (30, 60),
+    "general": (500, 60) if DEBUG_MODE else (120, 60),
+    "write": (200, 60) if DEBUG_MODE else (60, 60),
 }
 
 # ── Redis sliding-window counter ────────────────────────────────────────

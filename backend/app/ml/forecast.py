@@ -93,16 +93,17 @@ def build_series(
 
 
 def _fill_gaps(series: list, days: int) -> list:
-    """Expand sparse observations into a dense daily series (zero-filled)."""
-    if not series:
-        return []
-    start = series[0][0].date()
-    index = {d: c for d, c in series}
-    dense = []
-    for offset in range(days):
-        day = start + timedelta(days=offset)
-        dense.append((datetime.combine(day, datetime.min.time()), int(index.get(day, 0))))
-    return dense
+    """Return a fixed historical window ending today, with missing days zero-filled."""
+    end = datetime.utcnow().date()
+    start = end - timedelta(days=days - 1)
+    # ``series`` uses datetimes while the generated window uses dates.  Using
+    # a single date representation prevents every lookup from becoming zero.
+    index = {observed_at.date(): cases for observed_at, cases in series}
+    return [
+        (datetime.combine(start + timedelta(days=offset), datetime.min.time()),
+         int(index.get(start + timedelta(days=offset), 0)))
+        for offset in range(days)
+    ]
 
 
 # ── Smoothing models (pure NumPy) ──────────────────────────────────────

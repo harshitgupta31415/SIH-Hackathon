@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import User, UserRole
+from app.models.models import User, UserRole, Village
 from app.middleware.auth import get_current_user, require_role
 from app.services.health_service import HealthService
 from app.ml.predictor import MLPredictor
@@ -55,4 +55,9 @@ def get_trends(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    village = db.query(Village).filter(Village.id == village_id).first()
+    if not village:
+        raise HTTPException(status_code=404, detail="Village not found")
+    if village.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to view another district")
     return MLPredictor.calculate_trend(db, village_id, disease_type)

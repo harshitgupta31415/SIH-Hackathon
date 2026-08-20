@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -16,9 +18,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // A 401 from /auth/login is an invalid credential error, not an expired
+    // session. Only clear and redirect an existing authenticated session.
+    const hasSession = Boolean(localStorage.getItem('healthwatch_token'));
+    if (error.response?.status === 401 && hasSession) {
       localStorage.removeItem('healthwatch_token');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
     }
     return Promise.reject(error);
   }

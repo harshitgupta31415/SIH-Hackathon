@@ -63,10 +63,12 @@ with TestClient(app) as c:
 
     login = c.post('/api/auth/login', json={'email': 'admin@test.com', 'password': 'testpass123'})
     print(f"2. login:       {login.status_code}")
+    assert login.status_code == 200
     tok = login.json()['access_token']
     h = {'Authorization': f'Bearer {tok}'}
 
     vol_login = c.post('/api/auth/login', json={'email': 'vol@test.com', 'password': 'testpass123'})
+    assert vol_login.status_code == 200
     vol_token = vol_login.json()['access_token']
 
     r = c.get('/api/dashboard/summary', headers=h)
@@ -90,6 +92,11 @@ with TestClient(app) as c:
 
     # Test ML prediction
     r = c.get('/api/dashboard/predictions/Kamrup/Diarrhea', headers=h)
+    assert r.status_code == 200
+    assert r.json()['predicted_cases'] > 0
+    assert r.json()['explanation']['horizon_days'] == 14
+    assert r.json()['explanation']['risk_drivers']
+    assert r.json()['explanation']['recommended_actions']
     print(f"9. prediction:  {r.status_code}  risk={r.json().get('risk_level')}  predicted={r.json().get('predicted_cases')}")
 
     # ── Upgrade Request Flow ──
@@ -115,4 +122,18 @@ with TestClient(app) as c:
     }, headers=h_admin)
     print(f"13. approve-request: {r.status_code}  status={r.json().get('status')}")
 
-    print("\n=== ALL 13 TESTS PASSED ===")
+    registration = c.post('/api/auth/register', json={
+        'name': 'New User', 'email': 'new.user@example.com', 'phone': '9999999996',
+        'password': 'testpass123', 'district': 'Kamrup', 'state': 'Assam',
+    })
+    assert registration.status_code == 201
+    duplicate = c.post('/api/auth/register', json={
+        'name': 'Duplicate User', 'email': 'NEW.USER@EXAMPLE.COM', 'phone': '9999999995',
+        'password': 'testpass123', 'district': 'Kamrup', 'state': 'Assam',
+    })
+    assert duplicate.status_code == 400
+    invalid_login = c.post('/api/auth/login', json={'email': 'new.user@example.com', 'password': 'wrong-password'})
+    assert invalid_login.status_code == 401
+    print("14. auth flow:   registration, duplicate protection, and invalid login verified")
+
+    print("\n=== ALL 14 TESTS PASSED ===")

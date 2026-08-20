@@ -4,6 +4,7 @@ import api from '../utils/api';
 export const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem('healthwatch_token'),
+  initialized: false,
   loading: false,
   error: null,
 
@@ -37,18 +38,21 @@ export const useAuthStore = create((set) => ({
 
   fetchMe: async () => {
     const token = localStorage.getItem('healthwatch_token');
-    if (!token) return;
+    if (!token) {
+      set({ initialized: true });
+      return;
+    }
     try {
       const { data } = await api.get('/auth/me');
-      set({ user: data, token });
+      set({ user: data, token, initialized: true });
     } catch {
       localStorage.removeItem('healthwatch_token');
-      set({ user: null, token: null });
+      set({ user: null, token: null, initialized: true });
     }
   },
 
   logout: () => {
     localStorage.removeItem('healthwatch_token');
-    set({ user: null, token: null });
+    set({ user: null, token: null, initialized: true, error: null });
   },
 }));

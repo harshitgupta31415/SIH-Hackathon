@@ -7,19 +7,21 @@ on:
     branches: [main]
 
 env:
-  PROJECT_ID: healthwatch-ne
-  GKE_CLUSTER: healthwatch-cluster
-  GKE_ZONE: asia-south1-a
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GKE_CLUSTER: ${{ vars.GKE_CLUSTER }}
+  GKE_ZONE: ${{ vars.GKE_ZONE }}
 
 jobs:
   # ── Job 1: Lint & Test ──────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -29,29 +31,39 @@ jobs:
       - name: Compile-check backend
         run: python -m compileall backend/app -q
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Run backend smoke test
+        run: python test_smoke.py
 
-      - name: Install & build frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Lint and build frontend
         working-directory: frontend
         run: |
           npm ci
+          npm run lint
           npm run build
 
   # ── Job 2: Build & Push Docker Images ──────────────────────────
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # CI still passes without cloud credentials. Deployment only runs after
+    # workload identity has been configured as described in DEPLOYMENT.md.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.GCP_PROJECT_ID != '' && vars.GKE_CLUSTER != '' && vars.GKE_ZONE != '' && vars.GCP_WIF_PROVIDER != '' && vars.GCP_DEPLOY_SERVICE_ACCOUNT != ''
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Auth to GCR
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -82,14 +94,18 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.GCP_PROJECT_ID != '' && vars.GKE_CLUSTER != '' && vars.GKE_ZONE != '' && vars.GCP_WIF_PROVIDER != '' && vars.GCP_DEPLOY_SERVICE_ACCOUNT != ''
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Auth to GCR
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -109,7 +125,7 @@ jobs:
           # Apply all manifests
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secrets.yaml || true  # Don't overwrite existing secrets
+          kubectl get secret healthwatch-secrets -n healthwatch
           kubectl apply -f k8s/services.yaml
           kubectl apply -f k8s/backend-deployment.yaml
           kubectl apply -f k8s/frontend-deployment.yaml

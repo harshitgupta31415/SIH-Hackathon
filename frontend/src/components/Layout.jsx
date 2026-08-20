@@ -15,6 +15,10 @@ const navItems = [
   { to: '/upgrade-requests', icon: '👤', label: 'nav.upgradeRequests', roles: ['block_officer', 'district_admin'] },
 ];
 
+navItems.splice(navItems.length - 1, 0, {
+  to: '/intelligence', icon: 'AI', label: 'Outbreak Intelligence', roles: ['block_officer', 'district_admin'],
+});
+
 const ROLE_LABELS = {
   volunteer: 'role.volunteer',
   asha_worker: 'role.ashaWorker',
@@ -23,9 +27,9 @@ const ROLE_LABELS = {
 };
 
 const ROLE_OPTIONS = {
-  volunteer: ['asha_worker', 'block_officer', 'district_admin'],
-  asha_worker: ['block_officer', 'district_admin'],
-  block_officer: ['district_admin'],
+  volunteer: ['asha_worker'],
+  asha_worker: ['block_officer'],
+  block_officer: [],
   district_admin: [],
 };
 

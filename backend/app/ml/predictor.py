@@ -159,11 +159,23 @@ class MLPredictor:
     @staticmethod
     def predict_outbreak(db: Session, district: str, disease_type: str) -> dict:
         villages = db.query(Village).filter(Village.district == district).all()
+        report_count = (
+            db.query(func.count(DiseaseReport.id))
+            .join(Village, DiseaseReport.village_id == Village.id)
+            .filter(
+                Village.district == district,
+                DiseaseReport.disease_type == disease_type,
+                DiseaseReport.created_at >= datetime.utcnow() - timedelta(days=120),
+            )
+            .scalar()
+            or 0
+        )
 
         total_predicted = 0.0
         total_confidence = 0.0
         village_forecasts = []
         high_risk_villages = []
+        has_water_contamination = False
 
         for village in villages:
             forecast = get_forecast(db, village, disease_type)
@@ -183,6 +195,7 @@ class MLPredictor:
                 factors.append("increasing_cases")
             if water_issues > 0:
                 factors.append("water_contamination")
+                has_water_contamination = True
             if village.population and village.population > 1000:
                 factors.append("high_population")
 
@@ -225,6 +238,46 @@ class MLPredictor:
         elif total_predicted > 15 or len(high_risk_villages) > 1:
             risk_level = "medium"
 
+        risk_drivers = []
+        if any(v["trend"] == "increasing" for v in village_forecasts):
+            risk_drivers.append({
+                "id": "increasing_cases",
+                "label": "Recent community reports are increasing",
+                "source": "Verified and submitted disease reports",
+            })
+        if has_water_contamination:
+            risk_drivers.append({
+                "id": "water_contamination",
+                "label": "Contaminated water sources were recorded",
+                "source": "Water-quality testing",
+            })
+        if any(village.population and village.population > 1000 for village in villages):
+            risk_drivers.append({
+                "id": "population_exposure",
+                "label": "Population exposure increases the potential impact",
+                "source": "Village profile data",
+            })
+        if not risk_drivers:
+            risk_drivers.append({
+                "id": "routine_monitoring",
+                "label": "No strong escalation signal was detected",
+                "source": "Current reporting window",
+            })
+
+        recommended_actions = ["Verify unusual reports with the assigned health worker."]
+        if has_water_contamination:
+            recommended_actions.append("Prioritise water-source testing and a boil-water advisory.")
+        if risk_level in ("high", "critical"):
+            recommended_actions.append("Create a district alert and increase village-level surveillance for 14 days.")
+        elif risk_level == "medium":
+            recommended_actions.append("Increase reporting follow-up and review the forecast again in 48 hours.")
+
+        data_status = "pilot"
+        if report_count >= 60:
+            data_status = "established"
+        elif report_count >= 30:
+            data_status = "developing"
+
         return {
             "district": district,
             "disease_type": disease_type,
@@ -239,6 +292,14 @@ class MLPredictor:
                 "models_used": sorted({v["method"] for v in village_forecasts}),
                 "disease_type": disease_type,
                 "district": district,
+            },
+            "explanation": {
+                "risk_drivers": risk_drivers,
+                "recommended_actions": recommended_actions,
+                "data_status": data_status,
+                "reports_used_last_120_days": report_count,
+                "horizon_days": 14,
+                "disclaimer": "This is an early-warning decision-support forecast. A qualified health official must verify cases and approve any public-health action.",
             },
             "village_forecasts": village_forecasts,
             "model_artifact": _model_cache["path"],

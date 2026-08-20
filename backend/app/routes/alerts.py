@@ -19,6 +19,8 @@ def create_alert(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN)),
 ):
+    if data.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to create alerts for another district")
     alert = Alert(
         issued_by=current_user.id,
         **data.model_dump()

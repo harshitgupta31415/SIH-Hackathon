@@ -13,7 +13,7 @@ export default function Register() {
   const { t } = useTranslation();
   const [form, setForm] = useState({
     name: '', email: '', phone: '', password: '',
-    village: '', block: '', district: 'Kamrup', state: 'Assam',
+    district: 'Kamrup', state: 'Assam',
   });
   const { register, loading, error } = useAuthStore();
   const navigate = useNavigate();
@@ -73,24 +73,14 @@ export default function Register() {
               {t('register.info')}
             </p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.district')}</label>
-                <select name="district" value={form.district} onChange={handleChange} className="input">
-                  {DISTRICTS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.block')}</label>
-                <input name="block" value={form.block} onChange={handleChange} className="input" />
-              </div>
-            </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.village')}</label>
-              <input name="village" value={form.village} onChange={handleChange} className="input" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.district')}</label>
+              <select name="district" value={form.district} onChange={handleChange} className="input">
+                {DISTRICTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400 mt-1">Your village and block will be detected when you submit a report.</p>
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full">

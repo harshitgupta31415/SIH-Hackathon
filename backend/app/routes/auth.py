@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime as _dt
@@ -25,7 +26,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
     user = User(
         name=data.name,
-        email=data.email,
+        email=data.email.lower(),
         phone=data.phone,
         password_hash=hash_password(data.password),
         # Elevated roles are provisioned by an administrator, never selected
@@ -37,7 +38,12 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         state=data.state,
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # The pre-flight lookup is not sufficient when two requests race.
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email or phone already registered")
     db.refresh(user)
 
     token = create_access_token({"sub": str(user.id), "role": user.role.value})
@@ -49,7 +55,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == data.email).first()
+    user = db.query(User).filter(User.email == data.email.lower()).first()
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not user.is_active:
@@ -70,9 +76,11 @@ def get_me(current_user: User = Depends(get_current_user)):
 # ── Role Upgrade Requests ────────────────────────────────
 
 ROLE_HIERARCHY = {
-    UserRole.VOLUNTEER: [UserRole.ASHA_WORKER, UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN],
-    UserRole.ASHA_WORKER: [UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN],
-    UserRole.BLOCK_OFFICER: [UserRole.DISTRICT_ADMIN],
+    UserRole.VOLUNTEER: [UserRole.ASHA_WORKER],
+    UserRole.ASHA_WORKER: [UserRole.BLOCK_OFFICER],
+    # District administrators are provisioned by a system administrator;
+    # they cannot be requested through the public self-service flow.
+    UserRole.BLOCK_OFFICER: [],
     UserRole.DISTRICT_ADMIN: [],
 }
 
@@ -155,6 +163,16 @@ def review_upgrade_request(
 
     if req.status != UpgradeRequestStatus.PENDING:
         raise HTTPException(status_code=400, detail="This request has already been reviewed")
+
+    if req.user_id == current_user.id:
+        raise HTTPException(status_code=403, detail="You cannot review your own upgrade request")
+
+    permitted_reviewers = {
+        UserRole.ASHA_WORKER: (UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN),
+        UserRole.BLOCK_OFFICER: (UserRole.DISTRICT_ADMIN,),
+    }
+    if current_user.role not in permitted_reviewers.get(req.requested_role, ()):
+        raise HTTPException(status_code=403, detail="Your role cannot approve this requested role")
 
     new_status = UpgradeRequestStatus(data.status.value)
     req.status = new_status

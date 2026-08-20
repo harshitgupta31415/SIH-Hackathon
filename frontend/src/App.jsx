@@ -10,11 +10,15 @@ import ReportsList from './pages/ReportsList';
 import WaterQuality from './pages/WaterQuality';
 import Alerts from './pages/Alerts';
 import RiskMap from './pages/RiskMap';
+import Intelligence from './pages/Intelligence';
 import UpgradeRequests from './pages/UpgradeRequests';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }) {
-  const { token } = useAuthStore();
+  const { token, initialized } = useAuthStore();
+  if (!initialized) {
+    return <div className="min-h-screen grid place-items-center text-slate-600">Loading your secure session…</div>;
+  }
   if (!token) return <Navigate to="/login" />;
   return children;
 }
@@ -46,6 +50,7 @@ export default function App() {
             <Route path="water-quality" element={<WaterQuality />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="risk-map" element={<RiskMap />} />
+            <Route path="intelligence" element={<Intelligence />} />
             <Route path="upgrade-requests" element={<UpgradeRequests />} />
           </Route>
         </Routes>
