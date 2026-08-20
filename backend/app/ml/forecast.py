@@ -1,8 +1,8 @@
 """Time-series forecasting engine for outbreak prediction.
 
-Implements lightweight exponential-smoothing models in pure NumPy so the
-forecast pipeline stays dependency-light in production, while optionally
-falling back to scikit-learn estimators when they are available.
+Implements lightweight exponential-smoothing models in pure Python so the
+forecast pipeline stays dependency-light in production. A separately trained
+scikit-learn regressor can be blended in by the prediction service.
 
 Public API
 ----------
@@ -15,13 +15,13 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import func, and_
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
-from app.models.models import DiseaseReport
+from app.models.models import DiseaseReport, ReportStatus
+from app.time_utils import utc_now
 
 
 def _ensure_uuid(value) -> UUID:
@@ -29,11 +29,6 @@ def _ensure_uuid(value) -> UUID:
     if isinstance(value, UUID):
         return value
     return UUID(str(value))
-
-try:  # scikit-learn is optional; the smoothing models work without it
-    import numpy as np
-except ImportError:  # pragma: no cover
-    np = None
 
 MIN_POINTS_FOR_MODEL = 5  # fewer observations -> heuristic fallback
 DEFAULT_HORIZON_DAYS = 14
@@ -71,7 +66,7 @@ def build_series(
     days: int = 120,
 ) -> list:
     """Return daily (date, total_cases) pairs for a village + disease."""
-    start = datetime.utcnow() - timedelta(days=days)
+    start = utc_now() - timedelta(days=days)
     vid = _ensure_uuid(village_id)
     rows = (
         db.query(
@@ -83,6 +78,7 @@ def build_series(
                 DiseaseReport.village_id == vid,
                 DiseaseReport.disease_type == disease_type,
                 DiseaseReport.created_at >= start,
+                DiseaseReport.status != ReportStatus.REJECTED,
             )
         )
         .group_by(func.date(DiseaseReport.created_at))
@@ -94,7 +90,7 @@ def build_series(
 
 def _fill_gaps(series: list, days: int) -> list:
     """Return a fixed historical window ending today, with missing days zero-filled."""
-    end = datetime.utcnow().date()
+    end = utc_now().date()
     start = end - timedelta(days=days - 1)
     # ``series`` uses datetimes while the generated window uses dates.  Using
     # a single date representation prevents every lookup from becoming zero.
@@ -227,7 +223,6 @@ def fit_and_forecast(
         for h, s in zip(h_forecast, s_forecast)
     ]
 
-    scale = max(1.0, sum(values) / (len(values) or 1))
     residual = math.sqrt(sum((v - sum(values) / len(values)) ** 2 for v in values) / len(values))
     spread = max(0.5, residual)
     confidence = max(0.35, min(0.9, len(values) / max_lookback_days))

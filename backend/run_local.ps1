@@ -1,7 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-# Run the development API with a local SQLite database. Docker Compose still
-# uses PostgreSQL through its own DATABASE_URL setting.
+# Run the development API with a local SQLite database.
 $env:DATABASE_URL = "sqlite:///./healthwatch.db"
 
 py seed_data.py

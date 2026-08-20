@@ -1,471 +1,224 @@
 <div align="center">
 
-# 🌊 Jal Jeevan Swasthya
+# Jal Jeevan Swasthya
 
-### Smart Community Health Monitoring & Early Warning System
+### Smart community health monitoring and early warning for water-borne disease
 
-**For Water-Borne Diseases in Rural Northeast India**
-
-[![SIH 25001](https://img.shields.io/badge/SIH-25001-blue?style=for-the-badge&logo=sih)]()
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql)]()
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?style=for-the-badge&logo=scikitlearn)]()
-
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Click_Here-brightgreen?style=for-the-badge)](https://frontend-kappa-seven-26.vercel.app)
-[![API Docs](https://img.shields.io/badge/API_Docs-Swagger-orange?style=for-the-badge)](https://backend-production-da21.up.railway.app/api/docs)
+Built for Smart India Hackathon 2025, problem statement `SIH25001`.
 
 </div>
 
----
+## Overview
 
-## 📋 About the Project
+Jal Jeevan Swasthya helps field workers report disease cases, record village
+water-quality tests, monitor district risk, and review explainable 14-day
+outbreak forecasts. The interface supports English, Hindi, Bengali, Assamese,
+Marathi, and Tamil.
 
-Water-borne disease outbreaks remain a critical health threat in rural Northeast India, where limited infrastructure, delayed reporting, and lack of predictive tools allow diseases like cholera, typhoid, and hepatitis to spread unchecked.
+The repository is a Vercel-only monorepo:
 
-**Jal Jeevan Swasthya** is a full-stack web application that empowers community health workers to report disease cases in real-time, monitors water quality across villages, and uses machine learning to predict outbreaks before they escalate — all accessible in 6 regional languages on any device.
+- `frontend/` is a Next.js 16 App Router project.
+- `backend/` is a FastAPI project exposed through Vercel's Python runtime.
+- A managed PostgreSQL database stores application data.
+- Managed Redis is optional; the API falls back to an in-process cache.
 
-> Built for **Smart India Hackathon 2025** — Problem Statement `SIH25001`
+## Features
 
----
+- Role-based workflows for volunteers, ASHA workers, block officers, and
+  district administrators.
+- Disease reporting with symptoms, severity, water source, and optional
+  geolocation-assisted village selection.
+- Water-quality tracking for pH, turbidity, coliform, dissolved oxygen, and
+  nitrate measurements.
+- Dashboard analytics, active alerts, and an interactive Leaflet risk map.
+- Explainable outbreak forecasts with confidence, risk drivers, and human
+  approval requirements.
+- JWT authentication, district-scoped access, request validation, caching, and
+  rate limiting.
 
-## 🌐 Live Demo
+## Technology
 
-| Service | URL |
-|---------|-----|
-| **Frontend** | [https://frontend-kappa-seven-26.vercel.app](https://frontend-kappa-seven-26.vercel.app) |
-| **Backend API** | [https://backend-production-da21.up.railway.app](https://backend-production-da21.up.railway.app) |
-| **API Documentation** | [https://backend-production-da21.up.railway.app/api/docs](https://backend-production-da21.up.railway.app/api/docs) |
+| Layer | Technology |
+| --- | --- |
+| Web | Next.js 16, React 19, Tailwind CSS 4 |
+| Client data | Axios, Zustand |
+| Visuals | Recharts, Leaflet, React Leaflet |
+| API | FastAPI, Pydantic 2, SQLAlchemy 2 |
+| Data | PostgreSQL, optional Redis |
+| Forecasting | Pure-Python exponential smoothing with optional scikit-learn regressor |
+| Hosting | Vercel for both frontend and API |
 
-### 🔑 Demo Accounts
+## Repository layout
 
-| Role | Email | Password | Capabilities |
-|------|-------|----------|-------------|
-| **District Admin** | `admin@healthwatch.gov.in` | `admin123` | Full access, manage users, review upgrades |
-| **ASHA Worker** | `priya@healthwatch.gov.in` | `worker123` | Verify reports, submit water tests, manage alerts |
-| **Block Officer** | `arup@healthwatch.gov.in` | `officer123` | Review upgrades, resolve alerts, ML intelligence |
-| **Volunteer** | `rahul@healthwatch.gov.in` | `volunteer123` | Submit disease reports, view dashboard |
-
----
-
-## ✨ Key Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 📝 Disease Reporting
-Community health workers submit reports with geolocation, symptoms, severity, and water source — verified by staff before entering the system.
-
-### 💧 Water Quality Monitoring
-Track pH, turbidity, coliform count, dissolved oxygen, and nitrate levels across village water sources with contamination detection.
-
-### 🤖 ML Outbreak Prediction
-Holt's exponential smoothing + Random Forest ensemble predicts disease outbreaks 14 days ahead with confidence intervals and risk drivers.
-
-### 🗺️ Interactive Risk Map
-Leaflet-powered map with color-coded village markers showing real-time risk scores from 0-100 based on case density and water quality.
-
-</td>
-<td width="50%">
-
-### 🔔 Real-Time Alerts
-Auto-generated alerts when risk scores cross thresholds. Severity-based filtering, recommended actions, and one-click resolution.
-
-### 📊 Analytics Dashboard
-Live metrics — reports today, weekly trends, top diseases chart, active alerts, and villages monitored at a glance.
-
-### 🌍 6-Language Support
-English, Hindi, Bengali, Assamese, Marathi, and Tamil — zero-dependency custom i18n with 229+ translation keys.
-
-### 🔐 Role-Based Access Control
-4-tier access model (Volunteer → ASHA Worker → Block Officer → District Admin) with district-level data isolation and JWT authentication.
-
-</td>
-</tr>
-</table>
-
----
-
-## 📸 Screenshots
-
-<table>
-<tr>
-<td align="center">
-<img src="screenshots/dashboard.png" alt="Dashboard" width="400" /><br>
-<b>Dashboard</b>
-</td>
-<td align="center">
-<img src="screenshots/risk-map.png" alt="Risk Map" width="400" /><br>
-<b>Interactive Risk Map</b>
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="screenshots/report-form.png" alt="Report Form" width="400" /><br>
-<b>Disease Report Form</b>
-</td>
-<td align="center">
-<img src="screenshots/intelligence.png" alt="ML Intelligence" width="400" /><br>
-<b>ML Outbreak Intelligence</b>
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="screenshots/alerts.png" alt="Alerts" width="400" /><br>
-<b>Alert Management</b>
-</td>
-<td align="center">
-<img src="screenshots/water-quality.png" alt="Water Quality" width="400" /><br>
-<b>Water Quality Testing</b>
-</td>
-</tr>
-<tr>
-<td align="center" colspan="2">
-<img src="screenshots/upgrade-requests.png" alt="Upgrade Requests" width="500" /><br>
-<b>Role Upgrade Requests</b>
-</td>
-</tr>
-</table>
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-| Technology | Purpose |
-|-----------|---------|
-| React 19 | UI framework |
-| Vite 8 | Build tool & dev server |
-| TailwindCSS 4 | Utility-first styling |
-| React Router 7 | Client-side routing |
-| Zustand | Lightweight state management |
-| Axios | HTTP client with JWT interceptor |
-| Recharts | Dashboard charts & graphs |
-| Leaflet + React-Leaflet | Interactive risk maps |
-
-### Backend
-
-| Technology | Purpose |
-|-----------|---------|
-| FastAPI | High-performance async API framework |
-| SQLAlchemy 2 | ORM with relationship mapping |
-| PostgreSQL 16 | Production relational database |
-| Redis 7 | Caching layer & rate limiting |
-| python-jose | JWT token authentication |
-| bcrypt | Password hashing |
-| Pydantic v2 | Request/response validation |
-| Loguru | Structured logging |
-
-### Machine Learning
-
-| Technology | Purpose |
-|-----------|---------|
-| scikit-learn | Random Forest regressor |
-| NumPy | Numerical computation |
-| joblib | Model serialization |
-| Holt's Exponential Smoothing | Time-series forecasting |
-| SES (Simple Exponential) | Baseline trend analysis |
-
-### DevOps & Infrastructure
-
-| Technology | Purpose |
-|-----------|---------|
-| Docker | Containerization |
-| Kubernetes (GKE) | Production orchestration |
-| Terraform | Infrastructure as Code |
-| GitHub Actions | CI/CD pipeline |
-| Railway | Backend hosting (current) |
-| Vercel | Frontend hosting (current) |
-| Nginx | Reverse proxy & rate limiting |
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    CLIENT LAYER                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  React SPA   │  │  Leaflet Map │  │  Recharts    │  │
-│  │  (Vite)      │  │  (Risk Map)  │  │  (Dashboard) │  │
-│  └──────┬───────┘  └──────────────┘  └──────────────┘  │
-│         │ Axios + JWT                                   │
-│         ▼                                               │
-│  ┌──────────────────┐                                   │
-│  │ Vercel (CDN)     │                                   │
-│  └────────┬─────────┘                                   │
-└───────────┼─────────────────────────────────────────────┘
-            │ HTTPS
-┌───────────▼─────────────────────────────────────────────┐
-│                   SERVER LAYER                          │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │ FastAPI (Railway)                                │   │
-│  │  ┌─────────┐ ┌──────────┐ ┌──────────────────┐  │   │
-│  │  │ Auth    │ │ Reports  │ │ Dashboard/Risk   │  │   │
-│  │  │ (JWT)   │ │ (CRUD)   │ │ (Aggregation)    │  │   │
-│  │  └─────────┘ └──────────┘ └──────────────────┘  │   │
-│  │  ┌─────────┐ ┌──────────┐ ┌──────────────────┐  │   │
-│  │  │ Alerts  │ │ Water    │ │ ML Predictor     │  │   │
-│  │  │         │ │ Quality  │ │ (Holt + RF)      │  │   │
-│  │  └─────────┘ └──────────┘ └──────────────────┘  │   │
-│  └──────────────────────────────────────────────────┘   │
-│         │                    │                          │
-│  ┌──────▼──────┐    ┌───────▼────────┐                 │
-│  │ PostgreSQL  │    │ Redis          │                 │
-│  │ (Data)      │    │ (Cache/Rate)   │                 │
-│  └─────────────┘    └────────────────┘                 │
-└─────────────────────────────────────────────────────────┘
+```text
+SIH-Hackathon/
+├── .env.example
+├── .github/workflows/ci.yml
+├── backend/
+│   ├── .env.example
+│   ├── .python-version
+│   ├── index.py                 # Vercel FastAPI entrypoint
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── seed_data.py
+│   └── app/
+│       ├── main.py
+│       ├── routes/
+│       ├── models/
+│       ├── schemas/
+│       ├── services/
+│       └── ml/
+├── frontend/
+│   ├── .env.example
+│   ├── app/                     # Next.js App Router routes and layouts
+│   ├── public/
+│   ├── src/                     # UI, state, API client, and translations
+│   ├── next.config.mjs
+│   └── package.json
+├── docs/JUDGE_DEMO.md
+└── test_smoke.py
 ```
 
----
-
-## 📁 Project Structure
-
-```
-Jal-Jeevan-Swasthya/
-├── 📄 README.md
-├── 🐳 Dockerfile                    # Railway deployment
-├── 🐳 docker-compose.yml            # Local development (4 services)
-├── ⚙️ railway.toml                  # Railway config
-├── 🧪 test_smoke.py                 # 14 end-to-end tests
-│
-├── 📁 backend/
-│   ├── 🐳 Dockerfile                # Multi-stage production build
-│   ├── 📄 requirements.txt          # 19 Python dependencies
-│   ├── 🌱 seed_data.py              # Demo data seeder
-│   └── 📁 app/
-│   │   ├── 🚀 main.py               # FastAPI entry point
-│   │   ├── ⚙️ config.py             # Pydantic settings
-│   │   ├── 🗄️ database.py          # SQLAlchemy engine
-│   │   ├── 📁 models/              # 7 SQLAlchemy models
-│   │   ├── 📁 schemas/             # 18 Pydantic schemas
-│   │   ├── 📁 routes/              # 7 route modules (20+ endpoints)
-│   │   ├── 📁 services/            # Health scoring, caching
-│   │   ├── 📁 middleware/          # JWT auth, rate limiter
-│   │   └── 📁 ml/                  # ML forecasting & prediction
-│
-├── 📁 frontend/
-│   ├── 📄 vercel.json               # Vercel deployment
-│   ├── 📄 package.json              # 12 runtime dependencies
-│   └── 📁 src/
-│       ├── 📁 components/           # Layout, LanguageSelector
-│       ├── 📁 pages/                # 10 page components
-│       ├── 📁 store/                # Zustand auth store
-│       ├── 📁 utils/                # Axios API client
-│       └── 📁 i18n/locales/         # 6 language files (229+ keys)
-│
-├── 📁 docs/
-│   └── 📄 JUDGE_DEMO.md            # 3-minute SIH demo script
-│
-├── 📁 k8s/                          # Kubernetes manifests (7 files)
-├── 📁 gcp/                          # Terraform + Cloud Build
-├── 📁 nginx/                        # Production reverse proxy
-└── 📁 .github/workflows/            # CI/CD pipeline
-```
-
----
-
-## 🚀 Getting Started
+## Local development
 
 ### Prerequisites
 
-- **Node.js** 18+ and npm
-- **Python** 3.12+
-- **PostgreSQL** 16+ (or Docker)
-- **Redis** 7+ (optional, falls back to in-memory)
+- Node.js 22 or newer
+- Python 3.12 or newer
+- PostgreSQL for production-like local development; SQLite works by default
+- Redis only if distributed caching is needed locally
 
-### Option A: Docker Compose (Recommended)
+### Backend
 
-```bash
-# Clone the repository
-git clone https://github.com/ayankunduixb-pixel/SIH-Hackathon.git
-cd SIH-Hackathon
-
-# Start all services (PostgreSQL, Redis, Backend, Frontend)
-docker compose up --build
+```powershell
+cd backend
+Copy-Item .env.example .env
+python -m pip install -r requirements-dev.txt
+python seed_data.py
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The database is seeded automatically with demo data on first start.
+For dependency-free local setup, change `DATABASE_URL` in `backend/.env` to:
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- API Docs: `http://localhost:8000/api/docs`
+```dotenv
+DATABASE_URL=sqlite:///./healthwatch.db
+```
 
-### Option B: Manual Setup
+The API is available at `http://localhost:8000`; Swagger documentation is at
+`http://localhost:8000/api/docs`.
 
-```bash
-# Backend
-cd backend
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+### Frontend
 
-# Seed database (optional)
-python seed_data.py
+Open a second terminal:
 
-# Frontend (new terminal)
+```powershell
 cd frontend
-npm install
+Copy-Item .env.example .env.local
+npm ci
 npm run dev
 ```
 
-### Option C: SQLite (No Database Setup)
+The Next.js app is available at `http://localhost:3000`.
 
-```bash
-cd backend
-python -m pip install -r requirements.txt
-.\run_local.ps1    # Windows PowerShell
+### Demo accounts
+
+After running `backend/seed_data.py`:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| District admin | `admin@healthwatch.gov.in` | `admin123` |
+| ASHA worker | `priya@healthwatch.gov.in` | `worker123` |
+| Block officer | `arup@healthwatch.gov.in` | `officer123` |
+| Volunteer | `rahul@healthwatch.gov.in` | `volunteer123` |
+
+These credentials are demonstration data and must not be used for real users.
+
+## Environment variables
+
+Use [`.env.example`](.env.example) as the combined reference. The deployable
+projects also contain scoped templates:
+
+- [`backend/.env.example`](backend/.env.example) contains API, database,
+  authentication, CORS, cache, and rate-limit settings.
+- [`frontend/.env.example`](frontend/.env.example) contains the public API
+  origin used by the browser.
+
+Production requirements:
+
+- Set `DEBUG=false`.
+- Generate a private `JWT_SECRET_KEY` of at least 32 characters.
+- Use a pooled managed PostgreSQL `DATABASE_URL`; a function-local SQLite file
+  is not durable on Vercel.
+- Set `CORS_ORIGINS` to a JSON array containing the deployed frontend URL and
+  any preview URLs that should be permitted.
+- Set `NEXT_PUBLIC_API_URL` to the deployed backend origin, with or without a
+  trailing `/api`.
+- Keep `RESET_DATABASE=false` and `ML_PRETRAIN_ENABLED=false` in production.
+
+## Vercel deployment
+
+Deploy the repository as two Vercel projects so both runtimes stay on stable,
+generally available platform paths.
+
+### 1. Deploy the API
+
+1. Import this repository in Vercel.
+2. Set the project root directory to `backend`.
+3. Keep automatic framework detection and the default build settings.
+4. Add the backend variables from `backend/.env.example`, using production
+   values. At minimum configure `DATABASE_URL`, `JWT_SECRET_KEY`, `DEBUG=false`,
+   and `CORS_ORIGINS`.
+5. Deploy. Vercel loads the FastAPI `app` exported by `backend/index.py`.
+
+The health check is `/api/health`, readiness is `/api/ready`, and API docs are
+served at `/api/docs`.
+
+### 2. Deploy the Next.js app
+
+1. Import the same repository as a second Vercel project.
+2. Set the project root directory to `frontend`.
+3. Vercel detects Next.js automatically.
+4. Set `NEXT_PUBLIC_API_URL` to the backend deployment URL.
+5. Deploy, then add the resulting frontend URL to the backend project's
+   `CORS_ORIGINS` and redeploy the API.
+
+Vercel's Git integration creates preview deployments and promotes production
+deployments. The repository CI only runs tests, linting, and the production
+build; it does not maintain a second deployment pipeline.
+
+## Testing
+
+From the repository root:
+
+```powershell
+python -m pip install -r backend/requirements-dev.txt
+python -m pytest test_smoke.py -q -W error::DeprecationWarning
+python -m ruff check backend test_smoke.py --select F
+
+cd frontend
+npm ci
+npm run lint
+npm run build
 ```
 
-### 🗃️ Reset Development Database
+## API summary
 
-```bash
-$env:RESET_DATABASE = "true"
-docker compose up --build
-```
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | Register a volunteer |
+| `POST` | `/api/auth/login` | Sign in and receive a JWT |
+| `GET` | `/api/auth/me` | Read the current profile |
+| `GET`, `POST` | `/api/reports` | List or submit disease reports |
+| `GET`, `POST` | `/api/water-quality` | List or submit water tests |
+| `GET`, `POST` | `/api/alerts` | List or create alerts |
+| `GET` | `/api/dashboard/summary` | Read dashboard metrics |
+| `GET` | `/api/dashboard/risk-map` | Read village risk points |
+| `GET` | `/api/dashboard/predictions/{district}/{disease}` | Generate a forecast |
+| `GET` | `/api/villages` | List monitored villages |
+| `GET` | `/api/health` | Liveness check |
+| `GET` | `/api/ready` | Database readiness check |
 
----
+## Safety note
 
-## 📡 API Overview
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/auth/register` | — | Create volunteer account |
-| `POST` | `/api/auth/login` | — | Login, get JWT token |
-| `GET` | `/api/auth/me` | ✅ | Current user profile |
-| `POST` | `/api/auth/request-upgrade` | ✅ | Request role upgrade |
-| `GET` | `/api/auth/upgrade-requests` | ✅ | List upgrade requests |
-| `PUT` | `/api/auth/upgrade-requests/{id}` | ✅ | Approve/reject upgrade |
-| `POST` | `/api/reports` | ✅ | Submit disease report |
-| `GET` | `/api/reports` | ✅ | List reports (district-scoped) |
-| `PUT` | `/api/reports/{id}/status` | ✅ | Verify/reject report |
-| `POST` | `/api/water-quality` | ✅ | Submit water test |
-| `GET` | `/api/water-quality` | ✅ | List water tests |
-| `POST` | `/api/alerts` | ✅ | Create alert |
-| `GET` | `/api/alerts` | ✅ | List alerts |
-| `PUT` | `/api/alerts/{id}/resolve` | ✅ | Resolve alert |
-| `GET` | `/api/dashboard/summary` | ✅ | Dashboard metrics |
-| `GET` | `/api/dashboard/risk-map` | ✅ | Village risk data |
-| `GET` | `/api/dashboard/predictions/{district}/{disease}` | ✅ | ML prediction |
-| `GET` | `/api/dashboard/trends/{village_id}/{disease}` | ✅ | Disease trends |
-| `GET` | `/api/villages` | ✅ | List villages |
-| `GET` | `/api/locations/reverse` | ✅ | Reverse geocoding |
-| `GET` | `/api/health` | — | Health check |
-
----
-
-## 🗄️ Database Schema
-
-| Model | Table | Key Fields |
-|-------|-------|------------|
-| **User** | `users` | UUID id, name, email, role (enum), district, coordinates |
-| **Village** | `villages` | UUID id, name, block, district, population, coordinates |
-| **DiseaseReport** | `disease_reports` | reporter_id, village_id, disease_type, symptoms (JSON), severity, risk_score |
-| **WaterQuality** | `water_quality` | village_id, tested_by, ph, turbidity, coliform, is_contaminated |
-| **Alert** | `alerts` | title, severity, affected_area, predicted_cases, is_resolved |
-| **RoleUpgradeRequest** | `role_upgrade_requests` | user_id, current_role, requested_role, justification, status |
-| **OutbreakPrediction** | `outbreak_predictions` | district, disease_type, predicted_cases, confidence, factors (JSON) |
-
----
-
-## 🔐 Role-Based Access Control
-
-| Feature | Volunteer | ASHA Worker | Block Officer | District Admin |
-|---------|:---------:|:-----------:|:-------------:|:--------------:|
-| Submit disease reports | ✅ | ✅ | ❌ | ❌ |
-| View reports | ✅ | ✅ | ✅ | ✅ |
-| Verify/reject reports | ❌ | ✅ | ✅ | ✅ |
-| Submit water tests | ❌ | ✅ | ✅ | ❌ |
-| View water tests | ❌ | ✅ | ✅ | ✅ |
-| Create alerts | ❌ | ❌ | ✅ | ✅ |
-| Resolve alerts | ❌ | ❌ | ✅ | ✅ |
-| ML Intelligence | ❌ | ❌ | ✅ | ✅ |
-| Review upgrade requests | ❌ | ❌ | ✅ | ✅ |
-| Dashboard analytics | ✅ | ✅ | ✅ | ✅ |
-| Risk map | ✅ | ✅ | ✅ | ✅ |
-
----
-
-## 🌍 Internationalization
-
-| Code | Language | Native Name |
-|------|----------|-------------|
-| `en` | English | English |
-| `hi` | Hindi | हिन्दी |
-| `bn` | Bengali | বাংলা |
-| `as` | Assamese | অসমীয়া |
-| `mr` | Marathi | मराठी |
-| `ta` | Tamil | தமிழ் |
-
-> 229+ translation keys covering all UI sections. Custom zero-dependency i18n — no external libraries needed.
-
----
-
-## 🚢 Deployment
-
-### Current Production
-
-| Service | Platform | URL |
-|---------|----------|-----|
-| Backend | Railway | [backend-production-da21.up.railway.app](https://backend-production-da21.up.railway.app) |
-| Frontend | Vercel | [frontend-kappa-seven-26.vercel.app](https://frontend-kappa-seven-26.vercel.app) |
-| Database | Railway PostgreSQL | Managed |
-
-### Production Infrastructure (GKE)
-
-The repository includes full Kubernetes and Terraform configuration for Google Cloud Platform deployment:
-
-- **Terraform**: VPC, GKE cluster, Cloud SQL PostgreSQL, Memorystore Redis
-- **Kubernetes**: 7 manifests with autoscaling (2-12 pods), health probes, ingress
-- **CI/CD**: GitHub Actions pipeline (test → build → deploy)
-- **Nginx**: Production reverse proxy with rate limiting and security headers
-
-See [`docs/DEPLOYMENT.md`](.github/DEPLOYMENT.md) for GKE deployment guide.
-
----
-
-## 🧪 Testing
-
-```bash
-# Run the 14 end-to-end smoke tests
-cd backend
-python -m pytest ../test_smoke.py -v
-```
-
-Tests cover: auth flow, report CRUD, water quality, alerts, dashboard, ML predictions, RBAC enforcement, and database integrity.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgements
-
-- **Smart India Hackathon 2025** — Problem Statement SIH25001
-- **OpenStreetMap** — Map tile data for Leaflet risk maps
-- **Nominatim** — Reverse geocoding services
-- All the community health workers of Northeast India who inspired this project
-
----
-
-<div align="center">
-
-**Built with ❤️ for the communities of Northeast India**
-
-[⬆ Back to Top](#-healthwatch-ne)
-
-</div>
+Forecasts are decision-support signals, not diagnoses. Public-health action
+must be reviewed and approved by a qualified official.

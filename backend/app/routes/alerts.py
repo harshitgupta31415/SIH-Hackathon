@@ -1,14 +1,15 @@
-from uuid import UUID
 from typing import Optional
-from datetime import datetime
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import Alert, User, UserRole
-from app.schemas.schemas import AlertCreate, AlertResponse
 from app.middleware.auth import get_current_user, require_role
+from app.models.models import Alert, AlertSeverity, User, UserRole
+from app.schemas.schemas import AlertCreate, AlertResponse
+from app.time_utils import utc_now
 
 router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
 
@@ -21,10 +22,9 @@ def create_alert(
 ):
     if data.district != current_user.district:
         raise HTTPException(status_code=403, detail="Not authorized to create alerts for another district")
-    alert = Alert(
-        issued_by=current_user.id,
-        **data.model_dump()
-    )
+    payload = data.model_dump()
+    payload["severity"] = AlertSeverity(data.severity.value)
+    alert = Alert(issued_by=current_user.id, **payload)
     db.add(alert)
     db.commit()
     db.refresh(alert)
@@ -35,7 +35,7 @@ def create_alert(
 def list_alerts(
     district: Optional[str] = None,
     is_resolved: Optional[bool] = None,
-    severity: Optional[str] = None,
+    severity: Optional[AlertSeverity] = None,
     limit: int = Query(50, le=200),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -46,8 +46,6 @@ def list_alerts(
     if district and district != current_user.district:
         raise HTTPException(status_code=403, detail="Not authorized to view alerts outside your district")
     query = query.filter(Alert.district == (district or current_user.district))
-    if district:
-        query = query.filter(Alert.district == district)
     if is_resolved is not None:
         query = query.filter(Alert.is_resolved == is_resolved)
     if severity:
@@ -75,7 +73,7 @@ def resolve_alert(
         raise HTTPException(status_code=403, detail="Not authorized to resolve alerts outside your district")
 
     alert.is_resolved = True
-    alert.resolved_at = datetime.utcnow()
+    alert.resolved_at = utc_now()
     alert.resolved_by = current_user.id
     db.commit()
     db.refresh(alert)

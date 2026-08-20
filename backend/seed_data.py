@@ -1,13 +1,23 @@
-import uuid
-import os
 import sys
-from datetime import datetime, timedelta
-from app.database import SessionLocal, engine, Base
-from app.models.models import User, Village, DiseaseReport, WaterQuality, Alert
-from app.middleware.auth import hash_password
-from app.models.models import UserRole, ReportStatus, WaterSourceType, AlertSeverity
+from datetime import timedelta
 
-if os.getenv("RESET_DATABASE") == "true":
+from app.config import get_settings
+from app.database import Base, SessionLocal, engine
+from app.middleware.auth import hash_password
+from app.models.models import (
+    Alert,
+    AlertSeverity,
+    DiseaseReport,
+    ReportStatus,
+    User,
+    UserRole,
+    Village,
+    WaterQuality,
+    WaterSourceType,
+)
+from app.time_utils import utc_now
+
+if get_settings().RESET_DATABASE:
     Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
@@ -119,12 +129,12 @@ for i in range(30):
             symptoms=symptoms_map[disease],
             cases_count=max(1, (i % 5) + 1),
             severity=["mild", "moderate", "severe"][i % 3],
-            water_source=["well", "river", "tap"][i % 3],
+            water_source=[WaterSourceType.WELL, WaterSourceType.RIVER, WaterSourceType.TAP][i % 3],
             latitude=village.latitude + (i * 0.001),
             longitude=village.longitude + (i * 0.001),
-            status=["pending", "verified"][i % 2],
+            status=[ReportStatus.PENDING, ReportStatus.VERIFIED][i % 2],
             risk_score=min(100, (i % 6) * 15 + 10),
-            created_at=datetime.utcnow() - timedelta(days=days_ago, hours=i),
+            created_at=utc_now() - timedelta(days=days_ago, hours=i),
         )
         db.add(report)
         reports.append(report)
@@ -141,7 +151,7 @@ for i, village in enumerate(villages[:4]):
         turbidity=2.0 + (i * 3),
         coliform_count=i * 15,
         is_contaminated=i > 1,
-        test_date=datetime.utcnow() - timedelta(days=i),
+        test_date=utc_now() - timedelta(days=i),
         latitude=village.latitude,
         longitude=village.longitude,
     )

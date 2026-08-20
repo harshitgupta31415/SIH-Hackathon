@@ -1,13 +1,14 @@
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import WaterQuality, User, UserRole, Village
-from app.schemas.schemas import WaterQualityCreate, WaterQualityResponse
 from app.middleware.auth import require_role
+from app.models.models import User, UserRole, Village, WaterQuality
+from app.schemas.schemas import WaterQualityCreate, WaterQualityResponse
 from app.services.health_service import WaterQualityService
 
 router = APIRouter(prefix="/api/water-quality", tags=["Water Quality"])

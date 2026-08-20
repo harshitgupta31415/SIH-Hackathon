@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import en from './locales/en.json';
 import hi from './locales/hi.json';
 import bn from './locales/bn.json';
@@ -21,20 +21,26 @@ const STORAGE_KEY = 'healthwatch_lang';
 const LanguageContext = createContext(null);
 
 export function LanguageProvider({ children }) {
-  const [lang, setLangState] = useState(() => {
+  const [lang, setLangState] = useState('en');
+
+  useEffect(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'en';
+      const saved = localStorage.getItem(STORAGE_KEY);
+      // oxlint-disable-next-line react/set-state-in-effect -- hydrate the browser preference after server rendering.
+      if (saved && translations[saved]) setLangState(saved);
     } catch {
-      return 'en';
+      // Storage can be unavailable in privacy-restricted browser contexts.
     }
-  });
+  }, []);
 
   const setLang = useCallback((code) => {
     if (translations[code]) {
       setLangState(code);
       try {
         localStorage.setItem(STORAGE_KEY, code);
-      } catch {}
+      } catch {
+        // Storage can be unavailable in privacy-restricted browser contexts.
+      }
     }
   }, []);
 
@@ -54,6 +60,7 @@ export function LanguageProvider({ children }) {
   );
 }
 
+// oxlint-disable-next-line react/only-export-components -- provider and its hook form one public module
 export function useTranslation() {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error('useTranslation must be used within LanguageProvider');

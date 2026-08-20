@@ -1,15 +1,16 @@
-from datetime import datetime
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import DiseaseReport, User, UserRole, ReportStatus, Village
-from app.schemas.schemas import ReportCreate, ReportUpdate, ReportResponse
 from app.middleware.auth import get_current_user, require_role
+from app.models.models import DiseaseReport, ReportStatus, User, UserRole, Village
+from app.schemas.schemas import ReportCreate, ReportResponse, ReportUpdate
 from app.services.health_service import HealthService
+from app.time_utils import utc_now
 
 router = APIRouter(prefix="/api/reports", tags=["Disease Reports"])
 
@@ -94,10 +95,10 @@ def update_report_status(
         raise HTTPException(status_code=403, detail="Not authorized to update reports outside your district")
 
     if data.status:
-        report.status = data.status
+        report.status = ReportStatus(data.status.value)
         report.verified_by = current_user.id
-        report.verified_at = datetime.utcnow()
-    if data.notes:
+        report.verified_at = utc_now()
+    if data.notes is not None:
         report.notes = data.notes
 
     db.commit()

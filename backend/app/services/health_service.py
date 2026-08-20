@@ -1,21 +1,28 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
+
+from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, desc
 
 from app.models.models import (
-    DiseaseReport, WaterQuality, Alert, User, Village,
-    OutbreakPrediction, ReportStatus, AlertSeverity, UserRole
+    Alert,
+    AlertSeverity,
+    DiseaseReport,
+    ReportStatus,
+    User,
+    UserRole,
+    Village,
+    WaterQuality,
+    WaterSourceType,
 )
-from app.schemas.schemas import (
-    ReportCreate, WaterQualityCreate, AlertCreate
-)
+from app.schemas.schemas import ReportCreate, WaterQualityCreate
+from app.time_utils import utc_now
 
 
 class HealthService:
     @staticmethod
     def calculate_risk_score(db: Session, village_id: UUID, disease_type: str) -> float:
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = utc_now() - timedelta(days=7)
         recent_reports = db.query(DiseaseReport).filter(
             and_(
                 DiseaseReport.village_id == village_id,
@@ -34,8 +41,8 @@ class HealthService:
         contamination = db.query(WaterQuality).filter(
             and_(
                 WaterQuality.village_id == village_id,
-                WaterQuality.is_contaminated == True,
-                WaterQuality.created_at >= week_ago
+                WaterQuality.is_contaminated.is_(True),
+                WaterQuality.test_date >= week_ago
             )
         ).count()
 
@@ -52,10 +59,10 @@ class HealthService:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Village not found")
 
-        report = DiseaseReport(
-            reporter_id=reporter_id,
-            **report_data.model_dump()
-        )
+        payload = report_data.model_dump()
+        if report_data.water_source is not None:
+            payload["water_source"] = WaterSourceType(report_data.water_source.value)
+        report = DiseaseReport(reporter_id=reporter_id, **payload)
 
         # Include this report in the risk calculation before it is persisted.
         existing_score = HealthService.calculate_risk_score(db, report.village_id, report.disease_type)
@@ -122,19 +129,19 @@ class HealthService:
     @staticmethod
     def _get_recommended_action(severity: AlertSeverity, disease_type: str) -> str:
         actions = {
-            AlertSeverity.CRITICAL: f"Immediate isolation and treatment. Deploy medical team. Boil water advisory for all sources.",
-            AlertSeverity.HIGH: f"Issue boil-water advisory. Increase surveillance. Prepare isolation facilities.",
-            AlertSeverity.MEDIUM: f"Monitor cases closely. Test water sources. Distribute ORS packets.",
-            AlertSeverity.LOW: f"Continue monitoring. Educate community on hygiene practices.",
+            AlertSeverity.CRITICAL: "Immediate isolation and treatment. Deploy medical team. Boil water advisory for all sources.",
+            AlertSeverity.HIGH: "Issue boil-water advisory. Increase surveillance. Prepare isolation facilities.",
+            AlertSeverity.MEDIUM: "Monitor cases closely. Test water sources. Distribute ORS packets.",
+            AlertSeverity.LOW: "Continue monitoring. Educate community on hygiene practices.",
         }
         return actions.get(severity, "Monitor the situation.")
 
     @staticmethod
     def get_dashboard_summary(db: Session, district: str = None):
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        today = utc_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        week_ago = utc_now() - timedelta(days=7)
 
-        query = db.query(DiseaseReport)
+        query = db.query(DiseaseReport).filter(DiseaseReport.status != ReportStatus.REJECTED)
         if district:
             query = query.join(Village).filter(Village.district == district)
 
@@ -146,12 +153,19 @@ class HealthService:
             func.coalesce(func.sum(DiseaseReport.cases_count), 0)
         ).scalar()
 
-        alert_query = db.query(Alert).filter(Alert.is_resolved == False)
+        alert_query = db.query(Alert).filter(Alert.is_resolved.is_(False))
         if district:
             alert_query = alert_query.filter(Alert.district == district)
         active_alerts = alert_query.count()
 
-        district_query = db.query(func.count(func.distinct(Village.district)))
+        district_query = (
+            db.query(func.count(func.distinct(Village.district)))
+            .join(DiseaseReport, DiseaseReport.village_id == Village.id)
+            .filter(
+                DiseaseReport.created_at >= week_ago,
+                DiseaseReport.status != ReportStatus.REJECTED,
+            )
+        )
         if district:
             district_query = district_query.filter(Village.district == district)
         districts_affected = district_query.scalar()
@@ -161,11 +175,17 @@ class HealthService:
             village_count = village_count.filter(Village.district == district)
         villages_monitored = village_count.scalar()
 
-        disease_query = db.query(DiseaseReport.disease_type, func.sum(DiseaseReport.cases_count).label("total"))
+        disease_query = db.query(
+            DiseaseReport.disease_type,
+            func.sum(DiseaseReport.cases_count).label("total"),
+        )
         if district:
             disease_query = disease_query.join(Village).filter(Village.district == district)
         top_diseases = (
-            disease_query.filter(DiseaseReport.created_at >= week_ago)
+            disease_query.filter(
+                DiseaseReport.created_at >= week_ago,
+                DiseaseReport.status != ReportStatus.REJECTED,
+            )
             .group_by(DiseaseReport.disease_type)
             .order_by(desc("total"))
             .limit(5)
@@ -185,7 +205,7 @@ class HealthService:
 
     @staticmethod
     def get_risk_map_data(db: Session, district: str = None):
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = utc_now() - timedelta(days=7)
 
         query = (
             db.query(
@@ -197,7 +217,8 @@ class HealthService:
             )
             .outerjoin(DiseaseReport, and_(
                 DiseaseReport.village_id == Village.id,
-                DiseaseReport.created_at >= week_ago
+                DiseaseReport.created_at >= week_ago,
+                DiseaseReport.status != ReportStatus.REJECTED,
             ))
         )
 
@@ -243,11 +264,9 @@ class WaterQualityService:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Village not found")
         is_contaminated = WaterQualityService.assess_contamination(data)
-        record = WaterQuality(
-            tested_by=tested_by,
-            is_contaminated=is_contaminated,
-            **data.model_dump()
-        )
+        payload = data.model_dump()
+        payload["source_type"] = WaterSourceType(data.source_type.value)
+        record = WaterQuality(tested_by=tested_by, is_contaminated=is_contaminated, **payload)
         db.add(record)
         db.commit()
         db.refresh(record)

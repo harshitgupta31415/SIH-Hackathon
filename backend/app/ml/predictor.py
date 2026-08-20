@@ -14,15 +14,22 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import func, and_
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models.models import DiseaseReport, Village, WaterQuality, OutbreakPrediction
-from app.ml.forecast import fit_and_forecast, MIN_POINTS_FOR_MODEL
+from app.ml.forecast import fit_and_forecast
+from app.models.models import (
+    DiseaseReport,
+    OutbreakPrediction,
+    ReportStatus,
+    Village,
+    WaterQuality,
+)
+from app.time_utils import utc_now
 
 try:
     import joblib
@@ -61,7 +68,7 @@ def _ensure_model_file() -> str | None:
     if model is not None:
         return _model_cache["path"]
     try:
-        from app.ml.train import _train_model, _build_training_set
+        from app.ml.train import _build_training_set, _train_model
         db = SessionLocal()
         try:
             X, y, _ = _build_training_set(db)
@@ -101,6 +108,7 @@ def get_forecast(
         "village_name": village.name,
         "disease_type": disease_type,
         "forecast_series": result.forecast,
+        "observed_cases_last_14_days": sum(cases for _, cases in result.series[-14:]),
         "lower_bound": result.lower,
         "upper_bound": result.upper,
         "next_14_total": round(base, 1),
@@ -115,8 +123,8 @@ def get_forecast(
 class MLPredictor:
     @staticmethod
     def calculate_trend(db: Session, village_id: UUID, disease_type: str) -> dict:
-        two_weeks_ago = datetime.utcnow() - timedelta(days=14)
-        recent_week = datetime.utcnow() - timedelta(days=7)
+        two_weeks_ago = utc_now() - timedelta(days=14)
+        recent_week = utc_now() - timedelta(days=7)
 
         recent_cases = (
             db.query(func.coalesce(func.sum(DiseaseReport.cases_count), 0))
@@ -165,7 +173,8 @@ class MLPredictor:
             .filter(
                 Village.district == district,
                 DiseaseReport.disease_type == disease_type,
-                DiseaseReport.created_at >= datetime.utcnow() - timedelta(days=120),
+                DiseaseReport.created_at >= utc_now() - timedelta(days=120),
+                DiseaseReport.status != ReportStatus.REJECTED,
             )
             .scalar()
             or 0
@@ -185,6 +194,7 @@ class MLPredictor:
                     and_(
                         WaterQuality.village_id == village.id,
                         WaterQuality.is_contaminated.is_(True),
+                        WaterQuality.test_date >= utc_now() - timedelta(days=120),
                     )
                 )
                 .count()
@@ -200,7 +210,7 @@ class MLPredictor:
                 factors.append("high_population")
 
             # Risk level from the model projection vs the recent baseline.
-            recent_total = sum(forecast["forecast_series"][-14:])
+            recent_total = forecast["observed_cases_last_14_days"]
             projected = forecast["next_14_total"]
             growth = (projected / recent_total) if recent_total else 2.0
 
@@ -284,8 +294,8 @@ class MLPredictor:
             "predicted_cases": round(total_predicted, 1),
             "confidence": round(avg_confidence, 2),
             "risk_level": risk_level,
-            "prediction_date": datetime.utcnow(),
-            "valid_until": datetime.utcnow() + timedelta(days=14),
+            "prediction_date": utc_now(),
+            "valid_until": utc_now() + timedelta(days=14),
             "factors": {
                 "high_risk_villages": high_risk_villages,
                 "total_villages_assessed": len(villages),

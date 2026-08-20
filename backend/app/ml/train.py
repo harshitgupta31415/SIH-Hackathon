@@ -17,16 +17,16 @@ The artifacts are written to ``app/ml/models/``:
 
 from __future__ import annotations
 
-import io
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 
-from sqlalchemy import func, and_
+from sqlalchemy import and_, func
 
 from app.database import SessionLocal
-from app.models.models import DiseaseReport, Village, WaterQuality, Alert
 from app.ml.forecast import fit_and_forecast
+from app.models.models import Alert, DiseaseReport, Village, WaterQuality
+from app.time_utils import utc_now
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
@@ -43,7 +43,7 @@ def _engineered_features(
     db, village, disease_type, days: int = 120
 ) -> dict:
     """Feature vector used to predict case-load in the next 7 days."""
-    start = datetime.utcnow() - timedelta(days=days)
+    start = utc_now() - timedelta(days=days)
     rows = (
         db.query(
             func.date(DiseaseReport.created_at).label("day"),
@@ -60,10 +60,13 @@ def _engineered_features(
         .order_by(func.date(DiseaseReport.created_at))
         .all()
     )
-    daily = {r.day: int(r.cases) for r in rows}
+    daily = {
+        r.day if hasattr(r.day, "weekday") else date.fromisoformat(str(r.day)): int(r.cases)
+        for r in rows
+    }
 
     def window(days_ago):
-        cutoff = datetime.utcnow().date() - timedelta(days=days_ago - 1)
+        cutoff = utc_now().date() - timedelta(days=days_ago - 1)
         return sum(c for d, c in daily.items() if d >= cutoff)
 
     contaminated = (
@@ -99,7 +102,7 @@ def _engineered_features(
         "population": village.population or 0,
         "contaminated_sources": contaminated,
         "active_alerts": alerts,
-        "monsoon_month": 1 if datetime.utcnow().month in (6, 7, 8, 9) else 0,
+        "monsoon_month": 1 if utc_now().month in (6, 7, 8, 9) else 0,
     }
     target = window(14) if days > 14 else window(7)
     return features, target
@@ -136,7 +139,7 @@ def _train_model(X, y) -> str:
     model = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
     model.fit(X, y)
 
-    stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stamp = utc_now().strftime("%Y%m%d_%H%M%S")
     artifact = os.path.join(MODELS_DIR, f"outbreak_rf_{stamp}.joblib")
     joblib.dump(model, artifact)
 

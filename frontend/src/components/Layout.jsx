@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 import api from '../utils/api';
 import { useTranslation } from '../i18n/LanguageContext';
@@ -12,12 +13,9 @@ const navItems = [
   { to: '/water-quality', icon: '💧', label: 'nav.waterQuality', roles: ['asha_worker', 'block_officer', 'district_admin'] },
   { to: '/alerts', icon: '🔔', label: 'nav.alerts' },
   { to: '/risk-map', icon: '🗺️', label: 'nav.riskMap' },
+  { to: '/intelligence', icon: 'AI', label: 'Outbreak Intelligence', roles: ['block_officer', 'district_admin'] },
   { to: '/upgrade-requests', icon: '👤', label: 'nav.upgradeRequests', roles: ['block_officer', 'district_admin'] },
 ];
-
-navItems.splice(navItems.length - 1, 0, {
-  to: '/intelligence', icon: 'AI', label: 'Outbreak Intelligence', roles: ['block_officer', 'district_admin'],
-});
 
 const ROLE_LABELS = {
   volunteer: 'role.volunteer',
@@ -33,10 +31,66 @@ const ROLE_OPTIONS = {
   district_admin: [],
 };
 
-export default function Layout() {
+function SidebarContent({ user, t, pathname, canUpgrade, hasPending, onUpgrade, onLogout, onNavigate }) {
+  return (
+    <>
+      <div className="p-4 border-b border-slate-700">
+        <h1 className="text-lg font-bold">🌊 Jal Jeevan Swasthya</h1>
+        <p className="text-xs text-slate-400 mt-1">{t('app.subtitle')}</p>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {navItems.filter((item) => !item.roles || item.roles.includes(user?.role)).map((item) => (
+          <Link
+            key={item.to}
+            href={item.to}
+            onClick={onNavigate}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                (item.to === '/' ? pathname === '/' : pathname.startsWith(item.to))
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            {item.label.includes('.') ? t(item.label) : item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="p-4 border-t border-slate-700">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
+            {user?.name?.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{user?.name}</p>
+            <p className="text-xs text-slate-400 capitalize">{t(ROLE_LABELS[user?.role])}</p>
+          </div>
+        </div>
+
+        <LanguageSelector />
+
+        {canUpgrade && !hasPending && (
+          <button onClick={onUpgrade} className="w-full px-3 py-2 text-sm text-blue-400 hover:bg-slate-800 rounded-md transition-colors mb-1">
+            ⬆ {t('auth.requestUpgrade')}
+          </button>
+        )}
+        {hasPending && (
+          <p className="text-xs text-amber-400 px-3 mb-1">⬆ {t('auth.upgradePending')}</p>
+        )}
+
+        <button onClick={onLogout} className="w-full px-3 py-2 text-sm text-red-400 hover:bg-slate-800 rounded-md transition-colors">
+          {t('auth.logout')}
+        </button>
+      </div>
+    </>
+  );
+}
+
+export default function Layout({ children }) {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const pathname = usePathname();
+  const router = useRouter();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -48,12 +102,8 @@ export default function Layout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.replace('/login');
   };
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
 
   useEffect(() => {
     if (showUpgradeModal) {
@@ -98,73 +148,11 @@ export default function Layout() {
   const canUpgrade = ROLE_OPTIONS[user?.role]?.length > 0;
   const hasPending = myRequest?.status === 'pending';
 
-  const SidebarContent = () => (
-    <>
-      <div className="p-4 border-b border-slate-700">
-        <h1 className="text-lg font-bold">🌊 Jal Jeevan Swasthya</h1>
-        <p className="text-xs text-slate-400 mt-1">{t('app.subtitle')}</p>
-      </div>
-
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.filter((item) => !item.roles || item.roles.includes(user?.role)).map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <span className="text-lg">{item.icon}</span>
-            {t(item.label)}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t border-slate-700">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
-            {user?.name?.charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-xs text-slate-400 capitalize">{t(ROLE_LABELS[user?.role])}</p>
-          </div>
-        </div>
-
-        <LanguageSelector />
-
-        {canUpgrade && !hasPending && (
-          <button
-            onClick={openUpgradeModal}
-            className="w-full px-3 py-2 text-sm text-blue-400 hover:bg-slate-800 rounded-md transition-colors mb-1"
-          >
-            ⬆ {t('auth.requestUpgrade')}
-          </button>
-        )}
-        {hasPending && (
-          <p className="text-xs text-amber-400 px-3 mb-1">⬆ {t('auth.upgradePending')}</p>
-        )}
-
-        <button
-          onClick={handleLogout}
-          className="w-full px-3 py-2 text-sm text-red-400 hover:bg-slate-800 rounded-md transition-colors"
-        >
-          {t('auth.logout')}
-        </button>
-      </div>
-    </>
-  );
-
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 bg-slate-900 text-white flex-col shrink-0">
-        <SidebarContent />
+        <SidebarContent user={user} t={t} pathname={pathname} canUpgrade={canUpgrade} hasPending={hasPending} onUpgrade={openUpgradeModal} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
       </aside>
 
       {/* Mobile overlay sidebar */}
@@ -175,7 +163,7 @@ export default function Layout() {
             onClick={() => setSidebarOpen(false)}
           />
           <aside className="absolute inset-y-0 left-0 w-72 bg-slate-900 text-white flex flex-col transform transition-transform duration-200 ease-out">
-            <SidebarContent />
+            <SidebarContent user={user} t={t} pathname={pathname} canUpgrade={canUpgrade} hasPending={hasPending} onUpgrade={openUpgradeModal} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
           </aside>
         </div>
       )}
@@ -203,7 +191,7 @@ export default function Layout() {
 
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6">
-            <Outlet />
+            {children}
           </div>
         </main>
       </div>

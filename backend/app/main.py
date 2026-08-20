@@ -1,14 +1,24 @@
 from contextlib import asynccontextmanager
+from threading import Thread
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from loguru import logger
+from sqlalchemy import text
 
 from app.config import get_settings
-from app.database import engine, Base
-from app.routes import auth, reports, water_quality, alerts, dashboard, villages, locations
+from app.database import Base, engine
 from app.middleware.rate_limiter import RateLimitMiddleware
+from app.routes import (
+    alerts,
+    auth,
+    dashboard,
+    locations,
+    reports,
+    villages,
+    water_quality,
+)
 from app.services.cache import cache_health
 
 settings = get_settings()
@@ -20,14 +30,19 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:
-        logger.warning("Schema migration may have partially failed (safe to ignore on restart): %s", exc)
+        logger.warning("Schema initialization failed: {}", exc)
 
-    # Pre-train and cache the ML model so the first forecast request is fast.
-    try:
-        from app.ml.predictor import ensure_model_trained
-        ensure_model_trained()
-    except Exception as exc:
-        logger.warning("ML model pre-training skipped: %s", exc)
+    # Model training is optional and must never hold up health/readiness probes.
+    if settings.ML_PRETRAIN_ENABLED:
+        def prepare_model():
+            try:
+                from app.ml.predictor import ensure_model_trained
+                ensure_model_trained()
+                logger.info("ML model preparation complete")
+            except Exception as exc:  # pragma: no cover - best-effort background work
+                logger.warning("ML model pre-training skipped: {}", exc)
+
+        Thread(target=prepare_model, name="ml-model-pretrain", daemon=True).start()
 
     logger.info("Startup complete")
     yield
@@ -49,7 +64,7 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_credentials=settings.cors_origins_list != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining"],
@@ -79,7 +94,13 @@ def health_check():
 
 @app.get("/api/ready", tags=["Health"])
 def readiness():
-    """Kubernetes readiness probe: confirms the app can serve traffic."""
+    """Confirm the API can reach its required database dependency."""
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
+        logger.warning("Readiness check failed: {}", exc)
+        raise HTTPException(status_code=503, detail="Database is unavailable")
     return {"status": "ready"}
 
 

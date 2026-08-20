@@ -1,8 +1,9 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class UserRoleEnum(str, Enum):
@@ -35,17 +36,35 @@ class WaterSourceEnum(str, Enum):
     OTHER = "other"
 
 
+class ORMModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
+KNOWN_DISEASES = {
+    "cholera": "Cholera",
+    "typhoid": "Typhoid",
+    "diarrhea": "Diarrhea",
+    "hepatitis a": "Hepatitis A",
+    "dysentery": "Dysentery",
+}
+
+
+def canonical_disease_name(value: str) -> str:
+    normalized = " ".join(value.strip().split())
+    return KNOWN_DISEASES.get(normalized.casefold(), normalized)
+
+
 # ── Auth Schemas ──────────────────────────────────────────
 
 class UserRegister(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
-    phone: Optional[str] = None
-    password: str = Field(..., min_length=8)
-    village: Optional[str] = None
-    block: Optional[str] = None
-    district: str
-    state: str = "Assam"
+    phone: Optional[str] = Field(None, min_length=7, max_length=15, pattern=r"^\+?[0-9]+$")
+    password: str = Field(..., min_length=8, max_length=128)
+    village: Optional[str] = Field(None, max_length=100)
+    block: Optional[str] = Field(None, max_length=100)
+    district: str = Field(..., min_length=2, max_length=100)
+    state: str = Field("Assam", min_length=2, max_length=50)
 
     @field_validator("email")
     @classmethod
@@ -55,7 +74,7 @@ class UserRegister(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=1, max_length=128)
 
     @field_validator("email")
     @classmethod
@@ -63,7 +82,7 @@ class UserLogin(BaseModel):
         return str(value).strip().lower()
 
 
-class UserResponse(BaseModel):
+class UserResponse(ORMModel):
     id: UUID
     name: str
     email: str
@@ -76,10 +95,6 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -90,15 +105,20 @@ class TokenResponse(BaseModel):
 
 class ReportCreate(BaseModel):
     village_id: UUID
-    disease_type: str = Field(..., max_length=100)
-    symptoms: list[str]
+    disease_type: str = Field(..., min_length=2, max_length=100)
+    symptoms: list[str] = Field(..., min_length=1, max_length=30)
     cases_count: int = Field(..., ge=1, le=500)
     severity: str = "moderate"
     water_source: Optional[WaterSourceEnum] = None
     notes: Optional[str] = None
     photo_url: Optional[str] = None
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+    @field_validator("disease_type")
+    @classmethod
+    def normalize_disease_type(cls, value: str) -> str:
+        return canonical_disease_name(value)
 
 
 class ReportUpdate(BaseModel):
@@ -106,7 +126,7 @@ class ReportUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-class ReportResponse(BaseModel):
+class ReportResponse(ORMModel):
     id: UUID
     reporter_id: UUID
     village_id: UUID
@@ -124,10 +144,6 @@ class ReportResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
 # ── Water Quality Schemas ─────────────────────────────────
 
 class WaterQualityCreate(BaseModel):
@@ -140,12 +156,12 @@ class WaterQualityCreate(BaseModel):
     nitrate_level: Optional[float] = Field(None, ge=0)
     chlorine_residual: Optional[float] = Field(None, ge=0)
     test_date: datetime
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
     notes: Optional[str] = None
 
 
-class WaterQualityResponse(BaseModel):
+class WaterQualityResponse(ORMModel):
     id: UUID
     village_id: UUID
     source_type: WaterSourceEnum
@@ -158,11 +174,7 @@ class WaterQualityResponse(BaseModel):
     longitude: float
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
-class VillageResponse(BaseModel):
+class VillageResponse(ORMModel):
     id: UUID
     name: str
     block: str
@@ -170,10 +182,6 @@ class VillageResponse(BaseModel):
     state: str
     latitude: float
     longitude: float
-
-    class Config:
-        from_attributes = True
-
 
 class ReverseLocationResponse(BaseModel):
     latitude: float
@@ -185,21 +193,21 @@ class ReverseLocationResponse(BaseModel):
 # ── Alert Schemas ─────────────────────────────────────────
 
 class AlertCreate(BaseModel):
-    title: str = Field(..., max_length=200)
-    message: str
+    title: str = Field(..., min_length=3, max_length=200)
+    message: str = Field(..., min_length=3, max_length=5000)
     severity: AlertSeverityEnum
-    affected_area: str
-    district: str
+    affected_area: str = Field(..., min_length=2, max_length=200)
+    district: str = Field(..., min_length=2, max_length=100)
     block: Optional[str] = None
     villages: Optional[list[str]] = None
-    predicted_cases: Optional[int] = None
+    predicted_cases: Optional[int] = Field(None, ge=0)
     recommended_action: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    radius_km: float = 10.0
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    radius_km: float = Field(10.0, gt=0, le=500)
 
 
-class AlertResponse(BaseModel):
+class AlertResponse(ORMModel):
     id: UUID
     title: str
     message: str
@@ -210,10 +218,6 @@ class AlertResponse(BaseModel):
     predicted_cases: Optional[int]
     recommended_action: Optional[str]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
-
 
 # ── Dashboard Schemas ─────────────────────────────────────
 
@@ -271,7 +275,7 @@ class RoleUpgradeRequestCreate(BaseModel):
     justification: str = Field(..., min_length=10, max_length=500)
 
 
-class RoleUpgradeRequestResponse(BaseModel):
+class RoleUpgradeRequestResponse(ORMModel):
     id: UUID
     user_id: UUID
     user_name: Optional[str] = None
@@ -283,10 +287,6 @@ class RoleUpgradeRequestResponse(BaseModel):
     review_notes: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
-
 
 class RoleUpgradeReview(BaseModel):
     status: UpgradeRequestStatusEnum

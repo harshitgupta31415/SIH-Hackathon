@@ -1,12 +1,23 @@
+import enum
 import uuid
-from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, Integer, Float, DateTime, Boolean, Text, Enum, ForeignKey, JSON, Uuid
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Uuid,
 )
 from sqlalchemy.orm import relationship
-import enum
 
 from app.database import Base
+from app.time_utils import utc_now
 
 
 class UserRole(str, enum.Enum):
@@ -55,8 +66,8 @@ class User(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     reports = relationship(
         "DiseaseReport",
@@ -82,7 +93,7 @@ class Village(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     nearest_health_center = Column(String(200), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
 
 class DiseaseReport(Base):
@@ -104,8 +115,8 @@ class DiseaseReport(Base):
     verified_by = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)
     verified_at = Column(DateTime, nullable=True)
     risk_score = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     reporter = relationship("User", foreign_keys=[reporter_id], back_populates="reports")
     village = relationship("Village")
@@ -130,7 +141,7 @@ class WaterQuality(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     village = relationship("Village")
     tester = relationship("User")
@@ -156,7 +167,7 @@ class Alert(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     radius_km = Column(Float, default=10.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     issuer = relationship("User", foreign_keys=[issued_by], back_populates="alerts")
     resolver = relationship("User", foreign_keys=[resolved_by])
@@ -180,7 +191,7 @@ class RoleUpgradeRequest(Base):
     reviewed_by = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     review_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", foreign_keys=[user_id])
     reviewer = relationship("User", foreign_keys=[reviewed_by])
@@ -200,6 +211,6 @@ class OutbreakPrediction(Base):
     prediction_date = Column(DateTime, nullable=False)
     valid_until = Column(DateTime, nullable=False)
     factors = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     village = relationship("Village")

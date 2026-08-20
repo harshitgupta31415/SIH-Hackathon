@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import User, UserRole, Village
 from app.middleware.auth import get_current_user, require_role
-from app.services.health_service import HealthService
 from app.ml.predictor import MLPredictor
+from app.models.models import User, UserRole, Village
+from app.schemas.schemas import canonical_disease_name
+from app.services.health_service import HealthService
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -44,7 +45,8 @@ def get_prediction(
 ):
     if district != current_user.district:
         raise HTTPException(status_code=403, detail="Not authorized to view another district")
-    prediction = MLPredictor.predict_outbreak(db, district, disease_type)
+    prediction = MLPredictor.predict_outbreak(db, district, canonical_disease_name(disease_type))
+    MLPredictor.save_prediction(db, prediction)
     return prediction
 
 

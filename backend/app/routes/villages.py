@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -20,7 +20,7 @@ def list_villages(
     query = db.query(Village)
     # Community users should only be able to submit data for their district.
     allowed_district = current_user.district
-    query = query.filter(Village.district == (district or allowed_district))
     if district and district != allowed_district:
-        return []
+        raise HTTPException(status_code=403, detail="Not authorized to view villages outside your district")
+    query = query.filter(Village.district == (district or allowed_district))
     return query.order_by(Village.name).all()

@@ -9,29 +9,35 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import time
+from fnmatch import fnmatch
 from typing import Any, Optional
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 # ── Configuration ───────────────────────────────────────────────────────
 
-REDIS_URL = os.getenv("REDIS_URL", "")
-CACHE_DEFAULT_TTL = int(os.getenv("CACHE_TTL", "300"))  # 5 minutes
-CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() == "true"
+settings = get_settings()
+REDIS_URL = settings.REDIS_URL
+CACHE_DEFAULT_TTL = settings.CACHE_TTL
+CACHE_ENABLED = settings.CACHE_ENABLED
 
 # ── Redis connection (lazy) ─────────────────────────────────────────────
 
 _redis = None
 _redis_available = False
+_redis_retry_after = 0.0
 
 
 def _get_redis():
-    global _redis, _redis_available
+    global _redis, _redis_available, _redis_retry_after
     if _redis_available and _redis is not None:
         return _redis
     if not CACHE_ENABLED or not REDIS_URL:
+        return None
+    if time.monotonic() < _redis_retry_after:
         return None
     try:
         import redis as redis_mod
@@ -43,12 +49,14 @@ def _get_redis():
         )
         _redis.ping()
         _redis_available = True
+        _redis_retry_after = 0.0
         logger.info("Redis cache connected: %s", REDIS_URL.split("@")[-1])
         return _redis
     except Exception as exc:  # pragma: no cover
         logger.warning("Redis unavailable, falling back to in-memory cache: %s", exc)
         _redis_available = False
         _redis = None
+        _redis_retry_after = time.monotonic() + settings.REDIS_RETRY_SECONDS
         return None
 
 
@@ -88,18 +96,22 @@ def cache_key(*parts) -> str:
 
 def cache_get(key: str) -> Optional[Any]:
     """Return the cached value or ``None``."""
+    if not CACHE_ENABLED:
+        return None
     r = _get_redis()
     if r:
         try:
             raw = r.get(key)
             return json.loads(raw) if raw else None
         except Exception:
-            return None
+            pass
     return _mem_get(key)
 
 
 def cache_set(key: str, value: Any, ttl: int = CACHE_DEFAULT_TTL) -> None:
     """Store *value* under *key* for *ttl* seconds."""
+    if not CACHE_ENABLED:
+        return
     r = _get_redis()
     if r:
         try:
@@ -110,17 +122,22 @@ def cache_set(key: str, value: Any, ttl: int = CACHE_DEFAULT_TTL) -> None:
 
 
 def cache_delete(pattern: str) -> int:
-    """Delete keys matching *pattern* (Redis only)."""
-    r = _get_redis()
-    if not r:
+    """Delete keys matching *pattern* from all active cache backends."""
+    if not CACHE_ENABLED:
         return 0
-    try:
-        keys = r.keys(pattern)
-        if keys:
-            return r.delete(*keys)
-    except Exception:
-        pass
-    return 0
+    deleted = 0
+    r = _get_redis()
+    if r:
+        try:
+            keys = list(r.scan_iter(match=pattern, count=100))
+            if keys:
+                deleted += r.delete(*keys)
+        except Exception:
+            pass
+    memory_keys = [key for key in _mem_cache if fnmatch(key, pattern)]
+    for key in memory_keys:
+        _mem_cache.pop(key, None)
+    return deleted + len(memory_keys)
 
 
 def cache_flush_district(district: str) -> None:
@@ -131,6 +148,8 @@ def cache_flush_district(district: str) -> None:
 
 def cache_health() -> dict:
     """Return cache status for the /api/health endpoint."""
+    if not CACHE_ENABLED:
+        return {"backend": "disabled", "connected": False}
     r = _get_redis()
     if r:
         try:

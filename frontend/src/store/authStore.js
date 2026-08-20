@@ -3,7 +3,7 @@ import api from '../utils/api';
 
 export const useAuthStore = create((set) => ({
   user: null,
-  token: localStorage.getItem('healthwatch_token'),
+  token: null,
   initialized: false,
   loading: false,
   error: null,
@@ -13,10 +13,10 @@ export const useAuthStore = create((set) => ({
     try {
       const { data } = await api.post('/auth/login', { email, password });
       localStorage.setItem('healthwatch_token', data.access_token);
-      set({ user: data.user, token: data.access_token, loading: false });
+      set({ user: data.user, token: data.access_token, initialized: true, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Start the backend on port 8000 and try again.';
+      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Check the configured API URL and try again.';
       set({ error: msg, loading: false });
       throw err;
     }
@@ -25,12 +25,15 @@ export const useAuthStore = create((set) => ({
   register: async (formData) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await api.post('/auth/register', formData);
+      const { data } = await api.post('/auth/register', {
+        ...formData,
+        phone: formData.phone?.trim() || null,
+      });
       localStorage.setItem('healthwatch_token', data.access_token);
-      set({ user: data.user, token: data.access_token, loading: false });
+      set({ user: data.user, token: data.access_token, initialized: true, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Start the backend on port 8000 and try again.';
+      const msg = err.response?.data?.detail || 'Cannot reach the Jal Jeevan Swasthya API. Check the configured API URL and try again.';
       set({ error: msg, loading: false });
       throw err;
     }

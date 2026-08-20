@@ -1,17 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from uuid import UUID
-from datetime import datetime as _dt
 
 from app.database import get_db
-from app.models.models import User, UserRole, RoleUpgradeRequest, UpgradeRequestStatus
-from app.schemas.schemas import (
-    UserRegister, UserLogin, UserResponse, TokenResponse,
-    RoleUpgradeRequestCreate, RoleUpgradeRequestResponse, RoleUpgradeReview,
-    UserRoleEnum, UpgradeRequestStatusEnum,
+from app.middleware.auth import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    require_role,
+    verify_password,
 )
-from app.middleware.auth import hash_password, verify_password, create_access_token, get_current_user, require_role
+from app.models.models import RoleUpgradeRequest, UpgradeRequestStatus, User, UserRole
+from app.schemas.schemas import (
+    RoleUpgradeRequestCreate,
+    RoleUpgradeRequestResponse,
+    RoleUpgradeReview,
+    TokenResponse,
+    UpgradeRequestStatusEnum,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+)
+from app.time_utils import utc_now
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -177,7 +189,7 @@ def review_upgrade_request(
     new_status = UpgradeRequestStatus(data.status.value)
     req.status = new_status
     req.reviewed_by = current_user.id
-    req.reviewed_at = _dt.utcnow()
+    req.reviewed_at = utc_now()
     req.review_notes = data.review_notes
 
     if new_status == UpgradeRequestStatus.APPROVED and req_user:
