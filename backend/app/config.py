@@ -28,8 +28,11 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> list[str]:
+        raw = self.CORS_ORIGINS.strip()
+        if raw == "*":
+            return ["*"]
         try:
-            return json.loads(self.CORS_ORIGINS)
+            return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
             return ["http://localhost:5173", "http://localhost:3000"]
 

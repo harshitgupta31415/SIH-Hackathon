@@ -44,6 +44,19 @@ worker = User(
 )
 db.add(worker)
 
+# Create block officer
+block_officer = User(
+    name="Arup Jyoti Kalita",
+    email="arup@healthwatch.gov.in",
+    phone="9876543213",
+    password_hash=hash_password("officer123"),
+    role=UserRole.BLOCK_OFFICER,
+    block="Sonapur",
+    district="Kamrup",
+    state="Assam",
+)
+db.add(block_officer)
+
 # Create volunteer
 volunteer = User(
     name="Rahul Borgohain",
@@ -160,6 +173,7 @@ for title, msg, severity, area in alerts_data:
 db.commit()
 db.close()
 print("Seed data created successfully!")
-print("Admin: admin@healthwatch.gov.in / admin123")
-print("Worker: priya@healthwatch.gov.in / worker123")
-print("Volunteer: rahul@healthwatch.gov.in / volunteer123")
+print("Admin:       admin@healthwatch.gov.in / admin123")
+print("Worker:      priya@healthwatch.gov.in / worker123")
+print("Volunteer:   rahul@healthwatch.gov.in / volunteer123")
+print("Block Officer: arup@healthwatch.gov.in / officer123")
