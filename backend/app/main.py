@@ -17,7 +17,10 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:
+        logger.warning("Schema migration may have partially failed (safe to ignore on restart): %s", exc)
 
     # Pre-train and cache the ML model so the first forecast request is fast.
     try:
