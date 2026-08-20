@@ -246,3 +246,38 @@ class PredictionResponse(BaseModel):
     prediction_date: datetime
     valid_until: datetime
     factors: Optional[dict]
+
+
+# ── Role Upgrade Schemas ─────────────────────────────────
+
+class UpgradeRequestStatusEnum(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class RoleUpgradeRequestCreate(BaseModel):
+    requested_role: UserRoleEnum
+    justification: str = Field(..., min_length=10, max_length=500)
+
+
+class RoleUpgradeRequestResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    current_role: UserRoleEnum
+    requested_role: UserRoleEnum
+    justification: str
+    status: UpgradeRequestStatusEnum
+    review_notes: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class RoleUpgradeReview(BaseModel):
+    status: UpgradeRequestStatusEnum
+    review_notes: Optional[str] = None

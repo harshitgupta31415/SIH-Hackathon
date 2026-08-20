@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: healthwatch-ingress
+  namespace: healthwatch
+  annotations:
+    # GKE Ingress Controller
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "healthwatch-ip"
+    networking.gke.io/managed-certificates: "healthwatch-cert"
+    # Nginx Ingress Controller (alternative)
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  defaultBackend:
+    service:
+      name: healthwatch-frontend
+      port:
+        number: 80
+  rules:
+    - host: healthwatch.gov.in
+      http:
+        paths:
+          # API traffic → backend pods directly
+          - path: /api/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: healthwatch-backend
+                port:
+                  number: 8000
+          # Everything else → frontend
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: healthwatch-frontend
+                port:
+                  number: 80

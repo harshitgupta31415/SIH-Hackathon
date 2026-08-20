@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from uuid import UUID
+from datetime import datetime as _dt
 
 from app.database import get_db
-from app.models.models import User, UserRole
-from app.schemas.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
-from app.middleware.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.models.models import User, UserRole, RoleUpgradeRequest, UpgradeRequestStatus
+from app.schemas.schemas import (
+    UserRegister, UserLogin, UserResponse, TokenResponse,
+    RoleUpgradeRequestCreate, RoleUpgradeRequestResponse, RoleUpgradeReview,
+    UserRoleEnum, UpgradeRequestStatusEnum,
+)
+from app.middleware.auth import hash_password, verify_password, create_access_token, get_current_user, require_role
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -59,3 +65,129 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+# ── Role Upgrade Requests ────────────────────────────────
+
+ROLE_HIERARCHY = {
+    UserRole.VOLUNTEER: [UserRole.ASHA_WORKER, UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN],
+    UserRole.ASHA_WORKER: [UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN],
+    UserRole.BLOCK_OFFICER: [UserRole.DISTRICT_ADMIN],
+    UserRole.DISTRICT_ADMIN: [],
+}
+
+
+@router.post("/request-upgrade", response_model=RoleUpgradeRequestResponse, status_code=201)
+def request_upgrade(
+    data: RoleUpgradeRequestCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    target_role = UserRole(data.requested_role.value)
+
+    if target_role not in ROLE_HIERARCHY.get(current_user.role, []):
+        raise HTTPException(status_code=400, detail="Selected role is not a valid upgrade from your current role")
+
+    existing = (
+        db.query(RoleUpgradeRequest)
+        .filter(
+            RoleUpgradeRequest.user_id == current_user.id,
+            RoleUpgradeRequest.status == UpgradeRequestStatus.PENDING,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="You already have a pending upgrade request")
+
+    request = RoleUpgradeRequest(
+        user_id=current_user.id,
+        current_role=current_user.role,
+        requested_role=target_role,
+        justification=data.justification,
+    )
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+
+    resp = RoleUpgradeRequestResponse.model_validate(request)
+    resp.user_name = current_user.name
+    resp.user_email = current_user.email
+    return resp
+
+
+@router.get("/upgrade-requests", response_model=list[RoleUpgradeRequestResponse])
+def list_upgrade_requests(
+    status_filter: UpgradeRequestStatusEnum | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN)),
+):
+    query = db.query(RoleUpgradeRequest).filter(
+        RoleUpgradeRequest.user.has(User.district == current_user.district)
+    )
+    if status_filter:
+        query = query.filter(RoleUpgradeRequest.status == UpgradeRequestStatus(status_filter.value))
+
+    requests = query.order_by(RoleUpgradeRequest.created_at.desc()).all()
+
+    result = []
+    for r in requests:
+        resp = RoleUpgradeRequestResponse.model_validate(r)
+        resp.user_name = r.user.name if r.user else None
+        resp.user_email = r.user.email if r.user else None
+        result.append(resp)
+    return result
+
+
+@router.put("/upgrade-requests/{request_id}", response_model=RoleUpgradeRequestResponse)
+def review_upgrade_request(
+    request_id: UUID,
+    data: RoleUpgradeReview,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.BLOCK_OFFICER, UserRole.DISTRICT_ADMIN)),
+):
+    req = db.query(RoleUpgradeRequest).filter(RoleUpgradeRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Upgrade request not found")
+
+    req_user = db.query(User).filter(User.id == req.user_id).first()
+    if req_user and req_user.district != current_user.district:
+        raise HTTPException(status_code=403, detail="Not authorized to review requests from another district")
+
+    if req.status != UpgradeRequestStatus.PENDING:
+        raise HTTPException(status_code=400, detail="This request has already been reviewed")
+
+    new_status = UpgradeRequestStatus(data.status.value)
+    req.status = new_status
+    req.reviewed_by = current_user.id
+    req.reviewed_at = _dt.utcnow()
+    req.review_notes = data.review_notes
+
+    if new_status == UpgradeRequestStatus.APPROVED and req_user:
+        req_user.role = req.requested_role
+
+    db.commit()
+    db.refresh(req)
+
+    resp = RoleUpgradeRequestResponse.model_validate(req)
+    resp.user_name = req_user.name if req_user else None
+    resp.user_email = req_user.email if req_user else None
+    return resp
+
+
+@router.get("/my-upgrade-request", response_model=RoleUpgradeRequestResponse | None)
+def my_upgrade_request(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    req = (
+        db.query(RoleUpgradeRequest)
+        .filter(RoleUpgradeRequest.user_id == current_user.id)
+        .order_by(RoleUpgradeRequest.created_at.desc())
+        .first()
+    )
+    if not req:
+        return None
+    resp = RoleUpgradeRequestResponse.model_validate(req)
+    resp.user_name = current_user.name
+    resp.user_email = current_user.email
+    return resp

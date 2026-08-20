@@ -9,6 +9,7 @@ import ReportsList from './pages/ReportsList';
 import WaterQuality from './pages/WaterQuality';
 import Alerts from './pages/Alerts';
 import RiskMap from './pages/RiskMap';
+import UpgradeRequests from './pages/UpgradeRequests';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }) {
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="water-quality" element={<WaterQuality />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="risk-map" element={<RiskMap />} />
+          <Route path="upgrade-requests" element={<UpgradeRequests />} />
         </Route>
       </Routes>
     </BrowserRouter>

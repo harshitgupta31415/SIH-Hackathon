@@ -162,6 +162,30 @@ class Alert(Base):
     resolver = relationship("User", foreign_keys=[resolved_by])
 
 
+class UpgradeRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class RoleUpgradeRequest(Base):
+    __tablename__ = "role_upgrade_requests"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    current_role = Column(Enum(UserRole), nullable=False)
+    requested_role = Column(Enum(UserRole), nullable=False)
+    justification = Column(Text, nullable=False)
+    status = Column(Enum(UpgradeRequestStatus), default=UpgradeRequestStatus.PENDING)
+    reviewed_by = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", foreign_keys=[user_id])
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
+
+
 class OutbreakPrediction(Base):
     __tablename__ = "outbreak_predictions"
 
