@@ -2,22 +2,24 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import api from '../utils/api';
+import { useTranslation } from '../i18n/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 const navItems = [
-  { to: '/', icon: '📊', label: 'Dashboard' },
-  { to: '/reports', icon: '📋', label: 'Reports' },
-  { to: '/reports/new', icon: '➕', label: 'New Report', roles: ['volunteer', 'asha_worker'] },
-  { to: '/water-quality', icon: '💧', label: 'Water Quality', roles: ['asha_worker', 'block_officer', 'district_admin'] },
-  { to: '/alerts', icon: '🔔', label: 'Alerts' },
-  { to: '/risk-map', icon: '🗺️', label: 'Risk Map' },
-  { to: '/upgrade-requests', icon: '👤', label: 'Upgrade Requests', roles: ['block_officer', 'district_admin'] },
+  { to: '/', icon: '📊', label: 'nav.dashboard' },
+  { to: '/reports', icon: '📋', label: 'nav.reports' },
+  { to: '/reports/new', icon: '➕', label: 'nav.newReport', roles: ['volunteer', 'asha_worker'] },
+  { to: '/water-quality', icon: '💧', label: 'nav.waterQuality', roles: ['asha_worker', 'block_officer', 'district_admin'] },
+  { to: '/alerts', icon: '🔔', label: 'nav.alerts' },
+  { to: '/risk-map', icon: '🗺️', label: 'nav.riskMap' },
+  { to: '/upgrade-requests', icon: '👤', label: 'nav.upgradeRequests', roles: ['block_officer', 'district_admin'] },
 ];
 
 const ROLE_LABELS = {
-  volunteer: 'Volunteer',
-  asha_worker: 'ASHA Worker',
-  block_officer: 'Block Officer',
-  district_admin: 'District Admin',
+  volunteer: 'role.volunteer',
+  asha_worker: 'role.ashaWorker',
+  block_officer: 'role.blockOfficer',
+  district_admin: 'role.districtAdmin',
 };
 
 const ROLE_OPTIONS = {
@@ -30,6 +32,7 @@ const ROLE_OPTIONS = {
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [myRequest, setMyRequest] = useState(null);
   const [upgradeForm, setUpgradeForm] = useState({ requested_role: '', justification: '' });
@@ -64,10 +67,10 @@ export default function Layout() {
     try {
       const { data } = await api.post('/auth/request-upgrade', upgradeForm);
       setMyRequest(data);
-      setUpgradeSuccess('Request submitted! An admin will review it shortly.');
+      setUpgradeSuccess(t('upgrade.submitted'));
       setTimeout(() => setShowUpgradeModal(false), 1500);
     } catch (err) {
-      setUpgradeError(err.response?.data?.detail || 'Failed to submit request');
+      setUpgradeError(err.response?.data?.detail || t('upgrade.failed'));
     } finally {
       setUpgradeLoading(false);
     }
@@ -81,7 +84,7 @@ export default function Layout() {
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-4 border-b border-slate-700">
           <h1 className="text-lg font-bold">🏥 HealthWatch NE</h1>
-          <p className="text-xs text-slate-400 mt-1">Community Health Monitor</p>
+          <p className="text-xs text-slate-400 mt-1">{t('app.subtitle')}</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -99,7 +102,7 @@ export default function Layout() {
               }
             >
               <span className="text-lg">{item.icon}</span>
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
@@ -111,27 +114,29 @@ export default function Layout() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-slate-400 capitalize">{user?.role?.replace('_', ' ')}</p>
+              <p className="text-xs text-slate-400 capitalize">{t(ROLE_LABELS[user?.role])}</p>
             </div>
           </div>
+
+          <LanguageSelector />
 
           {canUpgrade && !hasPending && (
             <button
               onClick={openUpgradeModal}
               className="w-full px-3 py-2 text-sm text-blue-400 hover:bg-slate-800 rounded-md transition-colors mb-1"
             >
-              ⬆ Request Upgrade
+              ⬆ {t('auth.requestUpgrade')}
             </button>
           )}
           {hasPending && (
-            <p className="text-xs text-amber-400 px-3 mb-1">⬆ Upgrade request pending</p>
+            <p className="text-xs text-amber-400 px-3 mb-1">⬆ {t('auth.upgradePending')}</p>
           )}
 
           <button
             onClick={handleLogout}
             className="w-full px-3 py-2 text-sm text-red-400 hover:bg-slate-800 rounded-md transition-colors"
           >
-            Logout
+            {t('auth.logout')}
           </button>
         </div>
       </aside>
@@ -145,9 +150,9 @@ export default function Layout() {
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-1">Request Role Upgrade</h3>
+            <h3 className="text-lg font-semibold mb-1">{t('upgrade.title')}</h3>
             <p className="text-sm text-slate-500 mb-4">
-              Current role: <span className="font-medium text-slate-700">{ROLE_LABELS[user?.role]}</span>
+              {t('upgrade.currentRole')} <span className="font-medium text-slate-700">{t(ROLE_LABELS[user?.role])}</span>
             </p>
 
             {upgradeError && (
@@ -159,7 +164,7 @@ export default function Layout() {
 
             <form onSubmit={submitUpgrade} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Request Role</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('upgrade.requestRole')}</label>
                 <select
                   value={upgradeForm.requested_role}
                   onChange={(e) => setUpgradeForm({ ...upgradeForm, requested_role: e.target.value })}
@@ -167,19 +172,19 @@ export default function Layout() {
                   required
                 >
                   {(ROLE_OPTIONS[user?.role] || []).map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    <option key={r} value={r}>{t(ROLE_LABELS[r])}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Justification</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('upgrade.justification')}</label>
                 <textarea
                   value={upgradeForm.justification}
                   onChange={(e) => setUpgradeForm({ ...upgradeForm, justification: e.target.value })}
                   className="input"
                   rows={3}
-                  placeholder="Explain why you need this role upgrade..."
+                  placeholder={t('upgrade.justificationPlaceholder')}
                   required
                   minLength={10}
                   maxLength={500}
@@ -193,14 +198,14 @@ export default function Layout() {
                   onClick={() => setShowUpgradeModal(false)}
                   className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md"
                 >
-                  Cancel
+                  {t('upgrade.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={upgradeLoading}
                   className="btn-primary"
                 >
-                  {upgradeLoading ? 'Submitting...' : 'Submit Request'}
+                  {upgradeLoading ? t('upgrade.submitting') : t('upgrade.submitRequest')}
                 </button>
               </div>
             </form>

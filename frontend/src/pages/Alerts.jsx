@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const SEVERITY_CONFIG = {
   low: { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'badge-low', icon: 'ℹ️' },
@@ -10,6 +11,7 @@ const SEVERITY_CONFIG = {
 };
 
 export default function Alerts() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function Alerts() {
       await api.put(`/alerts/${id}/resolve`);
       setAlerts((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to resolve');
+      alert(err.response?.data?.detail || t('alerts.failedResolve'));
     }
   };
 
@@ -38,8 +40,8 @@ export default function Alerts() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Alerts</h1>
-          <p className="text-slate-500">Disease outbreak alerts and notifications</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('alerts.title')}</h1>
+          <p className="text-slate-500">{t('alerts.subtitle')}</p>
         </div>
       </div>
 
@@ -55,16 +57,16 @@ export default function Alerts() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            {f}
+            {f === 'active' ? t('alerts.active') : f === 'resolved' ? t('alerts.resolved') : t('alerts.all')}
           </button>
         ))}
       </div>
 
       {/* Alerts List */}
       {loading ? (
-        <div className="card p-12 text-center text-slate-400">Loading...</div>
+        <div className="card p-12 text-center text-slate-400">{t('reports.loading')}</div>
       ) : alerts.length === 0 ? (
-        <div className="card p-12 text-center text-slate-400">No alerts found</div>
+        <div className="card p-12 text-center text-slate-400">{t('alerts.noAlerts')}</div>
       ) : (
         <div className="space-y-3">
           {alerts.map((alert) => {
@@ -86,12 +88,12 @@ export default function Alerts() {
                       <span>📍 {alert.affected_area}</span>
                       <span>📅 {new Date(alert.created_at).toLocaleDateString()}</span>
                       {alert.predicted_cases && (
-                        <span>📈 Predicted: {alert.predicted_cases} cases</span>
+                        <span>📈 {t('alerts.predicted')} {alert.predicted_cases} {t('alerts.cases')}</span>
                       )}
                     </div>
                     {alert.recommended_action && (
                       <div className="mt-3 p-3 bg-white/60 rounded-lg">
-                        <p className="text-sm font-medium text-slate-700">Recommended Action:</p>
+                        <p className="text-sm font-medium text-slate-700">{t('alerts.recommendedAction')}</p>
                         <p className="text-sm text-slate-600">{alert.recommended_action}</p>
                       </div>
                     )}
@@ -101,7 +103,7 @@ export default function Alerts() {
                       onClick={() => handleResolve(alert.id)}
                       className="ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
                     >
-                      Mark Resolved
+                      {t('alerts.markResolved')}
                     </button>
                   )}
                 </div>

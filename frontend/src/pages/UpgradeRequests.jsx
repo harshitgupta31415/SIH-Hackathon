@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-
-const ROLE_LABELS = {
-  volunteer: 'Volunteer',
-  asha_worker: 'ASHA Worker',
-  block_officer: 'Block Officer',
-  district_admin: 'District Admin',
-};
-
-const STATUS_CONFIG = {
-  pending: { bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', icon: '⏳' },
-  approved: { bg: 'bg-green-50', border: 'border-green-200', badge: 'bg-green-100 text-green-700', icon: '✅' },
-  rejected: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700', icon: '❌' },
-};
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function UpgradeRequests() {
+  const { t } = useTranslation();
+
+  const ROLE_LABELS = {
+    volunteer: t('role.volunteer'),
+    asha_worker: t('role.ashaWorker'),
+    block_officer: t('role.blockOfficer'),
+    district_admin: t('role.districtAdmin'),
+  };
+
+  const STATUS_CONFIG = {
+    pending: { bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', icon: '⏳' },
+    approved: { bg: 'bg-green-50', border: 'border-green-200', badge: 'bg-green-100 text-green-700', icon: '✅' },
+    rejected: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700', icon: '❌' },
+  };
+
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
@@ -44,7 +47,7 @@ export default function UpgradeRequests() {
       setReviewNotes('');
       fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to review request');
+      alert(err.response?.data?.detail || t('upgradeRequests.failed'));
     } finally {
       setActionLoading(false);
     }
@@ -54,8 +57,8 @@ export default function UpgradeRequests() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Upgrade Requests</h1>
-          <p className="text-slate-500">Review role upgrade requests from volunteers and workers</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('upgradeRequests.title')}</h1>
+          <p className="text-slate-500">{t('upgradeRequests.subtitle')}</p>
         </div>
       </div>
 
@@ -71,16 +74,16 @@ export default function UpgradeRequests() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            {f}
+            {t(`upgradeRequests.${f}`)}
           </button>
         ))}
       </div>
 
       {/* Requests List */}
       {loading ? (
-        <div className="card p-12 text-center text-slate-400">Loading...</div>
+        <div className="card p-12 text-center text-slate-400">{t('reports.loading')}</div>
       ) : requests.length === 0 ? (
-        <div className="card p-12 text-center text-slate-400">No upgrade requests found</div>
+        <div className="card p-12 text-center text-slate-400">{t('upgradeRequests.noRequests')}</div>
       ) : (
         <div className="space-y-3">
           {requests.map((req) => {
@@ -95,7 +98,7 @@ export default function UpgradeRequests() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{config.icon}</span>
-                      <h3 className="font-semibold text-slate-900">{req.user_name || 'Unknown'}</h3>
+                      <h3 className="font-semibold text-slate-900">{req.user_name || t('upgradeRequests.unknown')}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.badge}`}>
                         {req.status}
                       </span>
@@ -110,12 +113,12 @@ export default function UpgradeRequests() {
                       <p className="text-sm text-slate-700">{req.justification}</p>
                     </div>
                     <div className="text-xs text-slate-400">
-                      Submitted {new Date(req.created_at).toLocaleString()}
+                      {t('upgradeRequests.submitted')} {new Date(req.created_at).toLocaleString()}
                     </div>
 
                     {req.review_notes && (
                       <div className="mt-2 p-3 bg-white/60 rounded-lg">
-                        <p className="text-xs font-medium text-slate-500 mb-1">Admin notes:</p>
+                        <p className="text-xs font-medium text-slate-500 mb-1">{t('upgradeRequests.adminNotes')}</p>
                         <p className="text-sm text-slate-600">{req.review_notes}</p>
                       </div>
                     )}
@@ -126,7 +129,7 @@ export default function UpgradeRequests() {
                       onClick={() => setReviewing(req.id)}
                       className="ml-4 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
                     >
-                      Review
+                      {t('upgradeRequests.review')}
                     </button>
                   )}
                 </div>
@@ -134,34 +137,34 @@ export default function UpgradeRequests() {
                 {/* Review Panel */}
                 {isReviewing && (
                   <div className="mt-4 p-4 bg-white rounded-lg border border-slate-200">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Admin Notes (optional)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('upgradeRequests.adminNotesLabel')}</label>
                     <textarea
                       value={reviewNotes}
                       onChange={(e) => setReviewNotes(e.target.value)}
                       className="input mb-3"
                       rows={2}
-                      placeholder="Add notes for the applicant..."
+                      placeholder={t('upgradeRequests.adminNotesPlaceholder')}
                     />
                     <div className="flex gap-2 justify-end">
                       <button
                         onClick={() => { setReviewing(null); setReviewNotes(''); }}
                         className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-md"
                       >
-                        Cancel
+                        {t('upgrade.cancel')}
                       </button>
                       <button
                         onClick={() => handleReview(req.id, 'rejected')}
                         disabled={actionLoading}
                         className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                       >
-                        Reject
+                        {t('upgradeRequests.reject')}
                       </button>
                       <button
                         onClick={() => handleReview(req.id, 'approved')}
                         disabled={actionLoading}
                         className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                       >
-                        Approve
+                        {t('upgradeRequests.approve')}
                       </button>
                     </div>
                   </div>

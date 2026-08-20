@@ -1,26 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-
-const SYMPTOMS = [
-  { id: 'diarrhea', label: 'Diarrhea', icon: '🤢' },
-  { id: 'vomiting', label: 'Vomiting', icon: '🤮' },
-  { id: 'fever', label: 'Fever', icon: '🤒' },
-  { id: 'cholera', label: 'Cholera-like', icon: '💧' },
-  { id: 'typhoid', label: 'Typhoid', icon: '🤕' },
-  { id: 'hepatitis', label: 'Hepatitis', icon: '🫁' },
-];
-
-const WATER_SOURCES = [
-  { value: 'well', label: 'Well' },
-  { value: 'river', label: 'River' },
-  { value: 'tap', label: 'Tap Water' },
-  { value: 'pond', label: 'Pond' },
-  { value: 'rainwater', label: 'Rainwater' },
-  { value: 'other', label: 'Other' },
-];
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function ReportForm() {
+  const { t } = useTranslation();
+
+  const SYMPTOMS = [
+    { id: 'diarrhea', label: t('symptom.diarrhea'), icon: '🤢' },
+    { id: 'vomiting', label: t('symptom.vomiting'), icon: '🤮' },
+    { id: 'fever', label: t('symptom.fever'), icon: '🤒' },
+    { id: 'cholera', label: t('symptom.cholera'), icon: '💧' },
+    { id: 'typhoid', label: t('symptom.typhoid'), icon: '🤕' },
+    { id: 'hepatitis', label: t('symptom.hepatitis'), icon: '🫁' },
+  ];
+
+  const WATER_SOURCES = [
+    { value: 'well', label: t('waterSource.well') },
+    { value: 'river', label: t('waterSource.river') },
+    { value: 'tap', label: t('waterSource.tap') },
+    { value: 'pond', label: t('waterSource.pond') },
+    { value: 'rainwater', label: t('waterSource.rainwater') },
+    { value: 'other', label: t('waterSource.other') },
+  ];
+
+  const SEVERITY_OPTIONS = [
+    { value: 'mild', label: t('severity.mild') },
+    { value: 'moderate', label: t('severity.moderate') },
+    { value: 'severe', label: t('severity.severe') },
+    { value: 'critical', label: t('severity.critical') },
+  ];
+
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -40,9 +50,9 @@ export default function ReportForm() {
     setVillagesError(null);
     api.get('/villages')
       .then(({ data }) => setVillages(data))
-      .catch(() => setVillagesError('Unable to load villages. Check that the API is running, then retry.'))
+      .catch(() => setVillagesError(t('reportForm.villagesLoadError')))
       .finally(() => setVillagesLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadVillages();
@@ -50,7 +60,7 @@ export default function ReportForm() {
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      setLocation((current) => ({ ...current, error: 'This browser does not support location access.' }));
+      setLocation((current) => ({ ...current, error: t('reportForm.noGeolocation') }));
       return;
     }
 
@@ -68,14 +78,14 @@ export default function ReportForm() {
         } catch {
           setLocation({
             latitude, longitude, address: null, loading: false,
-            error: 'Location found, but its address could not be resolved. You can still select a village manually.',
+            error: t('reportForm.geocodeFailed'),
           });
         }
       },
       (positionError) => {
         const message = positionError.code === 1
-          ? 'Location permission was denied. Select the village manually instead.'
-          : 'Unable to get your location. Select the village manually instead.';
+          ? t('reportForm.geolocationDenied')
+          : t('reportForm.geolocationError');
         setLocation((current) => ({ ...current, loading: false, error: message }));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
@@ -93,15 +103,15 @@ export default function ReportForm() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.symptoms.length) return setError('Select at least one symptom');
-    if (!form.disease_type) return setError('Enter the disease type');
-    if (!form.village_id) return setError('Select the village where cases were observed');
+    if (!form.symptoms.length) return setError(t('reportForm.symptomError'));
+    if (!form.disease_type) return setError(t('reportForm.diseaseError'));
+    if (!form.village_id) return setError(t('reportForm.villageError'));
 
     const selectedVillage = villages.find((village) => village.id === form.village_id);
     const latitude = location.latitude ?? selectedVillage?.latitude;
     const longitude = location.longitude ?? selectedVillage?.longitude;
     if (latitude == null || longitude == null) {
-      return setError('Use your location or select a village with saved coordinates before submitting.');
+      return setError(t('reportForm.locationError'));
     }
 
     setSubmitting(true);
@@ -110,7 +120,7 @@ export default function ReportForm() {
       await api.post('/reports', { ...form, latitude, longitude });
       navigate('/reports');
     } catch (requestError) {
-      setError(requestError.response?.data?.detail || 'Failed to submit report');
+      setError(requestError.response?.data?.detail || t('reportForm.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -118,8 +128,8 @@ export default function ReportForm() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">New Health Report</h1>
-      <p className="text-slate-500 mb-6">Report symptoms observed in your community</p>
+      <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('reportForm.title')}</h1>
+      <p className="text-slate-500 mb-6">{t('reportForm.subtitle')}</p>
 
       {error && <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm mb-4">{error}</div>}
 
@@ -127,40 +137,40 @@ export default function ReportForm() {
         <div className="card p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Report location</h2>
-              <p className="mt-1 text-sm text-slate-500">Allow location access to find your address and suggest the nearest monitored village.</p>
+              <h2 className="text-sm font-semibold text-slate-900">{t('reportForm.location')}</h2>
+              <p className="mt-1 text-sm text-slate-500">{t('reportForm.locationDesc')}</p>
             </div>
             <button type="button" onClick={requestLocation} disabled={location.loading} className="btn-secondary shrink-0">
-              {location.loading ? 'Finding...' : 'Use my location'}
+              {location.loading ? t('reportForm.finding') : t('reportForm.useMyLocation')}
             </button>
           </div>
           {location.address && <p className="mt-3 rounded-md bg-green-50 p-3 text-sm text-green-800">{location.address}</p>}
           {location.error && <p className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">{location.error}</p>}
-          {location.latitude != null && <p className="mt-2 text-xs text-slate-500">Coordinates: {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</p>}
+          {location.latitude != null && <p className="mt-2 text-xs text-slate-500">{t('reportForm.coordinates')} {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</p>}
         </div>
 
         <div className="card p-4">
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Village *</label>
+          <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.village')}</label>
           <select value={form.village_id} onChange={(event) => setForm({ ...form, village_id: event.target.value })} className="input" required disabled={villagesLoading}>
-            <option value="">{villagesLoading ? 'Loading villages...' : 'Select a village'}</option>
+            <option value="">{villagesLoading ? t('reportForm.loadingVillages') : t('reportForm.selectVillage')}</option>
             {villages.map((village) => <option key={village.id} value={village.id}>{village.name} — {village.block}</option>)}
           </select>
           {villagesError && (
             <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-red-50 p-2 text-sm text-red-700">
               <span>{villagesError}</span>
-              <button type="button" onClick={loadVillages} className="font-medium underline">Retry</button>
+              <button type="button" onClick={loadVillages} className="font-medium underline">{t('reportForm.retry')}</button>
             </div>
           )}
-          {location.latitude != null && form.village_id && <p className="mt-2 text-xs text-green-700">The nearest monitored village was selected. You can change it if needed.</p>}
+          {location.latitude != null && form.village_id && <p className="mt-2 text-xs text-green-700">{t('reportForm.autoSelected')}</p>}
         </div>
 
         <div className="card p-4">
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Disease Type *</label>
-          <input type="text" value={form.disease_type} onChange={(event) => setForm({ ...form, disease_type: event.target.value })} className="input" placeholder="e.g., Cholera, Typhoid, Diarrhea" required />
+          <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.diseaseType')}</label>
+          <input type="text" value={form.disease_type} onChange={(event) => setForm({ ...form, disease_type: event.target.value })} className="input" placeholder={t('reportForm.diseasePlaceholder')} required />
         </div>
 
         <div className="card p-4">
-          <label className="block text-sm font-semibold text-slate-900 mb-3">Symptoms Observed *</label>
+          <label className="block text-sm font-semibold text-slate-900 mb-3">{t('reportForm.symptoms')}</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {SYMPTOMS.map((symptom) => (
               <button key={symptom.id} type="button" onClick={() => toggleSymptom(symptom.id)} className={`p-4 rounded-xl border-2 text-center transition-all ${form.symptoms.includes(symptom.id) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 hover:border-slate-300'}`}>
@@ -173,30 +183,30 @@ export default function ReportForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="card p-4">
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Number of Cases *</label>
+            <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.casesCount')}</label>
             <input type="number" min="1" max="500" value={form.cases_count} onChange={(event) => setForm({ ...form, cases_count: Number(event.target.value) })} className="input text-center text-lg font-bold" />
           </div>
           <div className="card p-4">
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Severity</label>
+            <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.severity')}</label>
             <select value={form.severity} onChange={(event) => setForm({ ...form, severity: event.target.value })} className="input">
-              <option value="mild">Mild</option><option value="moderate">Moderate</option><option value="severe">Severe</option><option value="critical">Critical</option>
+              {SEVERITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </div>
         </div>
 
         <div className="card p-4">
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Water Source Used</label>
+          <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.waterSource')}</label>
           <div className="flex flex-wrap gap-2">
             {WATER_SOURCES.map((source) => <button key={source.value} type="button" onClick={() => setForm({ ...form, water_source: source.value })} className={`px-4 py-2 rounded-full text-sm border transition-colors ${form.water_source === source.value ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>{source.label}</button>)}
           </div>
         </div>
 
         <div className="card p-4">
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Additional Notes</label>
-          <textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="input min-h-[80px]" placeholder="Any additional observations..." />
+          <label className="block text-sm font-semibold text-slate-900 mb-2">{t('reportForm.notes')}</label>
+          <textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="input min-h-[80px]" placeholder={t('reportForm.notesPlaceholder')} />
         </div>
 
-        <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-base">{submitting ? 'Submitting...' : 'Submit Report'}</button>
+        <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-base">{submitting ? t('reportForm.submitting') : t('reportForm.submitReport')}</button>
       </form>
     </div>
   );

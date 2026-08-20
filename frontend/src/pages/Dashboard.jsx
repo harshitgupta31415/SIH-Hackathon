@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../utils/api';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,13 +22,13 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500">Loading dashboard...</p></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500">{t('dashboard.loading')}</p></div>;
 
   const stats = [
-    { label: 'Reports Today', value: summary?.total_reports_today || 0, color: 'bg-blue-500', icon: '📝' },
-    { label: 'Weekly Cases', value: summary?.total_reports_week || 0, color: 'bg-purple-500', icon: '📈' },
-    { label: 'Active Alerts', value: summary?.active_alerts || 0, color: 'bg-red-500', icon: '🔔' },
-    { label: 'Villages Monitored', value: summary?.villages_monitored || 0, color: 'bg-green-500', icon: '🏘️' },
+    { label: t('dashboard.reportsToday'), value: summary?.total_reports_today || 0, color: 'bg-blue-500', icon: '📝' },
+    { label: t('dashboard.weeklyCases'), value: summary?.total_reports_week || 0, color: 'bg-purple-500', icon: '📈' },
+    { label: t('dashboard.activeAlerts'), value: summary?.active_alerts || 0, color: 'bg-red-500', icon: '🔔' },
+    { label: t('dashboard.villagesMonitored'), value: summary?.villages_monitored || 0, color: 'bg-green-500', icon: '🏘️' },
   ];
 
   const severityColors = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high', critical: 'badge-critical' };
@@ -35,11 +37,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500">Real-time health monitoring overview</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.title')}</h1>
+          <p className="text-slate-500">{t('dashboard.subtitle')}</p>
         </div>
         <div className={`px-3 py-1 rounded-full text-sm font-medium ${summary?.risk_level === 'HIGH' ? 'bg-red-100 text-red-700' : summary?.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-          Risk: {summary?.risk_level || 'LOW'}
+          {t('dashboard.risk')}: {summary?.risk_level || 'LOW'}
         </div>
       </div>
 
@@ -65,7 +67,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Diseases Chart */}
         <div className="card p-4 lg:col-span-2">
-          <h3 className="font-semibold text-slate-900 mb-4">Top Diseases This Week</h3>
+          <h3 className="font-semibold text-slate-900 mb-4">{t('dashboard.topDiseases')}</h3>
           {summary?.top_diseases?.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={summary.top_diseases}>
@@ -76,15 +78,15 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-slate-400 text-center py-12">No data available</p>
+            <p className="text-slate-400 text-center py-12">{t('dashboard.noData')}</p>
           )}
         </div>
 
         {/* Active Alerts */}
         <div className="card p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-900">Active Alerts</h3>
-            <Link to="/alerts" className="text-sm text-blue-600 hover:underline">View all</Link>
+            <h3 className="font-semibold text-slate-900">{t('dashboard.activeAlerts')}</h3>
+            <Link to="/alerts" className="text-sm text-blue-600 hover:underline">{t('dashboard.viewAll')}</Link>
           </div>
           <div className="space-y-3">
             {alerts.length > 0 ? alerts.map((alert) => (
@@ -98,7 +100,7 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500 mt-1">{alert.affected_area}</p>
               </div>
             )) : (
-              <p className="text-slate-400 text-center py-6 text-sm">No active alerts</p>
+              <p className="text-slate-400 text-center py-6 text-sm">{t('dashboard.noActiveAlerts')}</p>
             )}
           </div>
         </div>
@@ -106,23 +108,23 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="card p-4">
-        <h3 className="font-semibold text-slate-900 mb-4">Quick Actions</h3>
+        <h3 className="font-semibold text-slate-900 mb-4">{t('dashboard.quickActions')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Link to="/reports/new" className="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition-colors">
             <span className="text-2xl">➕</span>
-            <p className="text-sm font-medium text-blue-900 mt-2">New Report</p>
+            <p className="text-sm font-medium text-blue-900 mt-2">{t('dashboard.newReport')}</p>
           </Link>
           <Link to="/risk-map" className="p-4 bg-purple-50 rounded-lg text-center hover:bg-purple-100 transition-colors">
             <span className="text-2xl">🗺️</span>
-            <p className="text-sm font-medium text-purple-900 mt-2">Risk Map</p>
+            <p className="text-sm font-medium text-purple-900 mt-2">{t('dashboard.riskMap')}</p>
           </Link>
           <Link to="/water-quality" className="p-4 bg-cyan-50 rounded-lg text-center hover:bg-cyan-100 transition-colors">
             <span className="text-2xl">💧</span>
-            <p className="text-sm font-medium text-cyan-900 mt-2">Water Test</p>
+            <p className="text-sm font-medium text-cyan-900 mt-2">{t('dashboard.waterTest')}</p>
           </Link>
           <Link to="/alerts" className="p-4 bg-red-50 rounded-lg text-center hover:bg-red-100 transition-colors">
             <span className="text-2xl">🔔</span>
-            <p className="text-sm font-medium text-red-900 mt-2">View Alerts</p>
+            <p className="text-sm font-medium text-red-900 mt-2">{t('dashboard.viewAlerts')}</p>
           </Link>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const WATER_PARAMS = [
   { key: 'ph_level', label: 'pH Level', min: 0, max: 14, unit: '', ideal: '6.5 - 8.5', icon: '🔬' },
@@ -19,6 +20,7 @@ const SOURCE_TYPES = [
 ];
 
 export default function WaterQuality() {
+  const { t } = useTranslation();
   const [records, setRecords] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -43,7 +45,7 @@ export default function WaterQuality() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.village_id) {
-      alert('Select the village where this water source was tested.');
+      alert(t('waterQuality.villageError'));
       return;
     }
     setSubmitting(true);
@@ -65,7 +67,7 @@ export default function WaterQuality() {
       setShowForm(false);
       setForm({ source_type: 'well', test_date: new Date().toISOString().split('T')[0], notes: '' });
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to submit');
+      alert(err.response?.data?.detail || t('waterQuality.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -75,28 +77,28 @@ export default function WaterQuality() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Water Quality</h1>
-          <p className="text-slate-500">Monitor and test water sources</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('waterQuality.title')}</h1>
+          <p className="text-slate-500">{t('waterQuality.subtitle')}</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          {showForm ? 'Cancel' : '+ New Test'}
+          {showForm ? t('waterQuality.cancel') : t('waterQuality.newTest')}
         </button>
       </div>
 
       {/* Submission Form */}
       {showForm && (
         <div className="card p-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Submit Water Test Result</h3>
+          <h3 className="font-semibold text-slate-900 mb-4">{t('waterQuality.submitTest')}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Village</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('waterQuality.village')}</label>
               <select
                 value={form.village_id || ''}
                 onChange={(e) => setForm({ ...form, village_id: e.target.value })}
                 className="input"
                 required
               >
-                <option value="">Select a village</option>
+                <option value="">{t('waterQuality.selectVillage')}</option>
                 {villages.map((village) => (
                   <option key={village.id} value={village.id}>{village.name} — {village.block}</option>
                 ))}
@@ -104,7 +106,7 @@ export default function WaterQuality() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Source Type</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('waterQuality.sourceType')}</label>
                 <select
                   value={form.source_type}
                   onChange={(e) => setForm({ ...form, source_type: e.target.value })}
@@ -116,7 +118,7 @@ export default function WaterQuality() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Test Date</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('waterQuality.testDate')}</label>
                 <input
                   type="date"
                   value={form.test_date}
@@ -131,8 +133,8 @@ export default function WaterQuality() {
                 <div key={param.key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     <span className="mr-1">{param.icon}</span>
-                    {param.label}
-                    <span className="text-xs text-slate-400 ml-1">(ideal: {param.ideal})</span>
+                    {param.key === 'ph_level' ? t('waterQuality.pH') : param.key === 'turbidity' ? t('waterQuality.turbidity') : param.key === 'coliform_count' ? t('waterQuality.coliform') : param.key === 'dissolved_oxygen' ? t('waterQuality.dissolvedOxygen') : t('waterQuality.nitrate')}
+                    <span className="text-xs text-slate-400 ml-1">({t('waterQuality.ideal')}: {param.ideal})</span>
                   </label>
                   <div className="relative">
                     <input
@@ -154,7 +156,7 @@ export default function WaterQuality() {
             </div>
 
             <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Submitting...' : 'Submit Test Result'}
+              {submitting ? t('waterQuality.submitting') : t('waterQuality.submitResult')}
             </button>
           </form>
         </div>
@@ -163,19 +165,19 @@ export default function WaterQuality() {
       {/* Records List */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400">Loading...</div>
+          <div className="p-12 text-center text-slate-400">{t('reports.loading')}</div>
         ) : records.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">No water quality records yet</div>
+          <div className="p-12 text-center text-slate-400">{t('waterQuality.noRecords')}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Source</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('waterQuality.source')}</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">pH</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Turbidity</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Coliform</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Date</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('waterQuality.turbidity')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('waterQuality.coliform')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.status')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.date')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -187,7 +189,7 @@ export default function WaterQuality() {
                   <td className="px-4 py-3 text-slate-600">{r.coliform_count ?? '-'}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.is_contaminated ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                      {r.is_contaminated ? 'Contaminated' : 'Safe'}
+                      {r.is_contaminated ? t('waterQuality.contaminated') : t('waterQuality.safe')}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-500">

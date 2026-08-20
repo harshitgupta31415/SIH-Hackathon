@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const STATUS_STYLES = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -18,6 +19,7 @@ const RISK_STYLES = (score) => {
 };
 
 export default function ReportsList() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function ReportsList() {
       await api.put(`/reports/${id}/status`, { status });
       setReports((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update');
+      alert(err.response?.data?.detail || t('reports.failedUpdate'));
     }
   };
 
@@ -51,10 +53,10 @@ export default function ReportsList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Disease Reports</h1>
-          <p className="text-slate-500">Community health reports</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('reports.title')}</h1>
+          <p className="text-slate-500">{t('reports.subtitle')}</p>
         </div>
-        <Link to="/reports/new" className="btn-primary">+ New Report</Link>
+        <Link to="/reports/new" className="btn-primary">{t('reports.newReport')}</Link>
       </div>
 
       {/* Filters */}
@@ -64,36 +66,36 @@ export default function ReportsList() {
           onChange={(e) => updateFilter({ status: e.target.value })}
           className="input w-40"
         >
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="verified">Verified</option>
-          <option value="rejected">Rejected</option>
+          <option value="">{t('reports.allStatus')}</option>
+          <option value="pending">{t('reports.pending')}</option>
+          <option value="verified">{t('reports.verified')}</option>
+          <option value="rejected">{t('reports.rejected')}</option>
         </select>
         <input
           type="text"
           value={filter.disease}
           onChange={(e) => updateFilter({ disease: e.target.value })}
           className="input w-60"
-          placeholder="Filter by disease..."
+          placeholder={t('reports.filterPlaceholder')}
         />
       </div>
 
       {/* Reports Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400">Loading...</div>
+          <div className="p-12 text-center text-slate-400">{t('reports.loading')}</div>
         ) : reports.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">No reports found</div>
+          <div className="p-12 text-center text-slate-400">{t('reports.noReports')}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Disease</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Cases</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Risk</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">Date</th>
-                <th className="text-right px-4 py-3 text-sm font-semibold text-slate-600">Actions</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.disease')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.cases')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.risk')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.status')}</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.date')}</th>
+                <th className="text-right px-4 py-3 text-sm font-semibold text-slate-600">{t('reports.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -123,13 +125,13 @@ export default function ReportsList() {
                           onClick={() => handleVerify(report.id, 'verified')}
                           className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                         >
-                          Verify
+                          {t('reports.verify')}
                         </button>
                         <button
                           onClick={() => handleVerify(report.id, 'rejected')}
                           className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
                         >
-                          Reject
+                          {t('reports.reject')}
                         </button>
                       </div>
                     )}

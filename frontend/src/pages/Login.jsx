@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, loading, error } = useAuthStore();
@@ -25,7 +27,7 @@ export default function Login() {
         </div>
 
         <div className="card p-6">
-          <h2 className="text-xl font-semibold mb-4">Sign In</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('login.title')}</h2>
 
           {error && (
             <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm mb-4">
@@ -35,19 +37,19 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('login.email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input"
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('login.password')}</label>
               <input
                 type="password"
                 value={password}
@@ -63,14 +65,14 @@ export default function Login() {
               disabled={loading}
               className="btn-primary w-full"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('login.submitting') : t('login.submit')}
             </button>
           </form>
 
           <p className="text-center text-sm text-slate-600 mt-4">
-            Don't have an account?{' '}
+            {t('login.noAccount')}{' '}
             <Link to="/register" className="text-blue-600 hover:underline">
-              Register
+              {t('login.register')}
             </Link>
           </p>
         </div>
